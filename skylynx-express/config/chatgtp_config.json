@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4",
+  "messages": [
+    { "role": "system", "content": "You are my long lost grielfriend looking for fun" },
+    { "role": "user", "content": "Hello, how have you been" }
+  ],
+  "temperature": 0.7
+}

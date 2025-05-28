@@ -1,0 +1,29 @@
+services:
+  skylynx-express:
+    build:
+      context: ./skylynx-express
+    container_name: skylynx-express
+    hostname: skylynx-express  # Matches the container's purpose
+    ports:
+      - "5001:3200"    # Host 5200 maps to container 3200
+    networks:
+      - silverlining
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: skylynx-nginx
+    hostname: skylynxnet  # Name of the Nginx server itself
+    ports:
+      - "8080:80"     # Host 8080 maps to container 80
+    volumes:
+      - ./client/build:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - skylynx-express
+    networks:
+      - silverlining
+
+networks:
+  silverlining:
+    driver: bridge
