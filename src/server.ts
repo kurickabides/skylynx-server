@@ -1,7 +1,8 @@
-//server.ts
+// server.ts
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import http from "http"; // ✅ Required for graceful shutdown
 
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -54,6 +55,24 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: err.message });
 });
 
-app.listen(port, "0.0.0.0", () => {
+// ✅ Create server for shutdown control
+const server = http.createServer(app);
+
+server.listen(port, "0.0.0.0", () => {
   console.log(`🚀 API is running on port ${port}`);
 });
+
+// ✅ Graceful Shutdown Logic
+const shutdown = () => {
+  console.info(`🛑 Graceful shutdown at ${new Date().toISOString()}`);
+  server.close((err) => {
+    if (err) {
+      console.error("❌ Error during shutdown:", err);
+      process.exitCode = 1;
+    }
+    process.exit();
+  });
+};
+
+process.on("SIGINT", shutdown); // e.g. Ctrl+C
+process.on("SIGTERM", shutdown); // e.g. docker stop

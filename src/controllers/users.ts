@@ -56,7 +56,8 @@ const assignRole = async (req: Request, res: Response) => {
 // ✅ Get roles for a user
 const getRoles = async (req: Request, res: Response) => {
   try {
-    const roles = await getUserRoles(req.params.id);
+    const { id } = req.params;
+    const roles = await getUserRoles(id);
     res.json(roles);
   } catch (error) {
     console.error("❌ Failed to get user roles:", error);

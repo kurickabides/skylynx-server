@@ -1,5 +1,9 @@
 services:
   skylynx-express:
+    stdin_open: true
+    tty: true
+    init: true
+    image: skylynx-sever
     build:
       context: .                  
       dockerfile: Dockerfile.dev
