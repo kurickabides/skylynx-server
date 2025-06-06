@@ -1,29 +1,25 @@
 services:
   skylynx-express:
     build:
-      context: ./skylynx-express
-    container_name: skylynx-express
-    hostname: skylynx-express  # Matches the container's purpose
+      context: .                  
+      dockerfile: Dockerfile.dev
+    container_name: skylynx-express-dev
     ports:
-      - "5001:3200"    # Host 5200 maps to container 3200
-    networks:
-      - silverlining
-
-  nginx:
-    build:
-      context: ./nginx
-    container_name: skylynx-nginx
-    hostname: skylynxnet  # Name of the Nginx server itself
-    ports:
-      - "8080:80"     # Host 8080 maps to container 80
+      - "5001:3200"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
-      - ./client/build:/usr/share/nginx/html
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - skylynx-express
+      - .:/app
+      - /app/node_modules
+    working_dir: /app
     networks:
       - silverlining
 
 networks:
   silverlining:
-    driver: bridge
+    external: true

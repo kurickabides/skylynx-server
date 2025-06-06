@@ -1,0 +1,21 @@
+# Dockerfile.dev
+
+FROM node:latest
+
+WORKDIR /app
+
+# Install deps first
+COPY package*.json ./
+RUN npm install
+RUN npm audit fix --force || true
+
+# Copy TypeScript source and config
+COPY src/ ./src
+COPY tsconfig.json ./
+
+# Optionally copy .env if needed
+# COPY .env.local .env
+
+EXPOSE 3200
+
+CMD ["npm", "run", "dev"]
