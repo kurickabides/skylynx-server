@@ -46,7 +46,9 @@ p:khaosrules4$ - Hash'$2b$12$bePn6NudkKtYKhFJpl/dRuFHFxK1Udfe2B01aTtMuMsgKerUTZI
 testUser
 u:testuser
 p:testingrules4$ ''
-
+Aother Test User
+"email": "kurickabides@gmail.com",
+password": "!khaosrules"
 
 # **📌 SkyLynx Database & API Design Documentation**
 
@@ -157,8 +159,81 @@ SkyLynx prioritizes **security and compliance** by enforcing:
 
 ---
 
-## **📌 7. Next Steps**
-✅ **Run all tests** to verify data integrity.  
-✅ **Start building the ExpressJS API in TypeScript** for backend interactions.  
+## 🧠 Design Principles
 
-🚀 Let me know if you need modifications before moving forward! 🔥
+- 🔐 **Security First**: API keys are stored as SHA-256 hashes. All requests are authenticated via `skyx-api-key` and `skyx-portal-id` headers.
+- 🏢 **Multi-Tenant Architecture**: Portals, users, modules, and API keys are decoupled for reusability and scaling.
+- ♻️ **Reusability & Modularity**: Validation logic lives in SQL Server functions (`fn_IsValidAPIKey`) for performance and reuse.
+
+---
+
+## 🗃️ Database Design (ER Diagram)
+
+```mermaid
+erDiagram
+    AspNetUsers ||--o{ API_KEYS : owns
+    AspNetUsers ||--o{ AspNetUserRoles : assigned
+    AspNetUsers ||--o{ UserProfiles : has
+    Portals ||--o{ API_KEYS : issues
+    Modules ||--o{ PortalModules : assigned
+    Portals ||--o{ PortalModules : integrates
+```
+
+---
+
+## 🔁 Auth & API Flow
+
+### 🔑 API Authentication Flow
+
+1. Client sends headers:
+   - `skyx-api-key`: **Plaintext key**
+   - `skyx-portal-id`: **Portal name**
+
+2. Server:
+   - Hashes the API key.
+   - Resolves portal name to PortalID via view.
+   - Validates both values using SQL Server `fn_IsValidAPIKey`.
+
+---
+
+## 🧪 Sample Test Script (Linux/macOS)
+
+### High-Volume Testing
+
+```bash
+seq 1 1000 | xargs -n1 -P50 curl -s http://localhost:3200/api/test-post -H "skyx-api-key: testkey123" -H "skyx-portal-id: SkyLynxNet" -d '{}'
+```
+
+### SQL Manual Validation (Example Only)
+
+```sql
+EXEC ValidateOwnerApiKey
+    @PlainApiKey = '2EEBE1A1-23CD-4C16-96E7-567C02EF79EA',
+    @PortalName = 'SkyLynxNet';
+```
+
+---
+
+## 🧰 Developer Notes
+
+- Headers used in production:
+  - `skyx-api-key`: API Key sent in plaintext.
+  - `skyx-portal-id`: Hashed or plain portal name depending on API contract.
+
+- `ValidateOwnerApiKey` and `fn_IsValidAPIKey` are core components for secured middleware checks.
+
+- Logging and traceability included via `console.log()` in middleware to aid debugging.
+
+---
+
+## ✅ Next Steps
+
+- Integrate frontend and test all endpoints using Postman or curl.
+- Extend SQL Server SPs for subscription/billing workflows.
+- Generate user-facing documentation for API usage (separate from this system-level doc).
+
+Let me know if you’d like:
+- Individual stored procedure/function descriptions.
+- Test endpoint diagrams.
+- Postman Collection JSON export.
+

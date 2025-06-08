@@ -19,10 +19,15 @@ router.get(
 );
 
 // ✅ Get all users
-router.get("/", authMiddleware.authenticate, userController.getAll);
+router.get(
+  "/",
+  authMiddleware.authenticate,
+  authMiddleware.authorize("Admin"),
+  userController.getAll
+);
 
 // ✅ Get user by ID
-router.get("/:id", authMiddleware.authenticate, userController.getById);
+router.get("/:id", authMiddleware.authenticate, authMiddleware.authorize("Admin"), userController.getById);
 
 // ✅ Create user
 router.post("/", authMiddleware.authenticate, userController.create);

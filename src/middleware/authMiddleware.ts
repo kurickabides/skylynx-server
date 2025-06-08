@@ -3,7 +3,7 @@ import { Response, NextFunction } from "express";
 import { poolPromise, sql } from "../config/db";
 import { AuthenticatedRequest } from "./types";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
+const JWT_SECRET = process.env.JWT_SECRET || "NULL";
 
 // 🔐 Token Authentication Middleware
 const authenticate = (

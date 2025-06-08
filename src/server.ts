@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes";
 import roleRoutes from "./routes/roleRoutes";
 import portalRoutes from "./routes/portalRoutes";
 import { poolPromise } from "./config/db";
+import authenticateAPI from "./middleware/authenticateAPI"; // ✅ renamed for portal key auth
 
 dotenv.config();
 
@@ -20,10 +21,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/roles", roleRoutes);
-app.use("/api/portals", portalRoutes);
+app.use("/api/auth", authenticateAPI, authRoutes);
+app.use("/api/users", authenticateAPI, userRoutes);
+app.use("/api/roles", authenticateAPI, roleRoutes);
+app.use("/api/portals", authenticateAPI, portalRoutes);
 
 // Base API Route
 app.get("/api", (req: Request, res: Response) => {
