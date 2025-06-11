@@ -1,11 +1,13 @@
 import jwt from "jsonwebtoken";
 import { Response, NextFunction } from "express";
-import { poolPromise, sql } from "../config/db";
 import { AuthenticatedRequest } from "./types";
+import userModel from "../services/userModel";
 
 const JWT_SECRET = process.env.JWT_SECRET || "NULL";
 
-// 🔐 Token Authentication Middleware
+/**
+ * ✅ JWT Authentication Middleware
+ */
 const authenticate = (
   req: AuthenticatedRequest,
   res: Response,
@@ -26,7 +28,9 @@ const authenticate = (
   }
 };
 
-// 🔐 Role Authorization Middleware
+/**
+ * ✅ Role Authorization Middleware using GetUserRoles SP
+ */
 const authorize = (requiredRoles: string[] | string) => {
   return async (
     req: AuthenticatedRequest,
@@ -40,17 +44,7 @@ const authorize = (requiredRoles: string[] | string) => {
           .json({ error: "Access denied. No user found in request." });
       }
 
-      const userId = req.user.id;
-      const pool = await poolPromise;
-
-      const result = await pool.request().input("UserId", sql.NVarChar, userId)
-        .query(`
-          SELECT r.Name FROM AspNetUserRoles ur 
-          JOIN AspNetRoles r ON ur.RoleId = r.Id 
-          WHERE ur.UserId = @UserId
-        `);
-
-      const userRoles = result.recordset.map((row: any) => row.Name);
+      const userRoles = await userModel.getUserRoles(req.user.id);
       const required = Array.isArray(requiredRoles)
         ? requiredRoles
         : [requiredRoles];
@@ -71,7 +65,6 @@ const authorize = (requiredRoles: string[] | string) => {
   };
 };
 
-// ✅ Export as a named module
 const authMiddleware = {
   authenticate,
   authorize,

@@ -237,3 +237,19 @@ Let me know if you’d like:
 - Test endpoint diagrams.
 - Postman Collection JSON export.
 
+## SigUp Workfolw
+``` mermaid
+flowchart TD
+    subgraph Client
+        A[User submits signup form]
+    end
+    subgraph Server
+        B[CreateUserSignUp SP]
+        C[Create user via CreateUser]
+        D[Assign DefaultUserRoles]
+        E[Get default Provider for Portal]
+        F[Insert UserProfile with PortalID + ProviderID]
+    end
+
+    A --> B --> C --> D --> E --> F -->|UserID returned| A
+```

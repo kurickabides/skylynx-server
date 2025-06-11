@@ -1,8 +1,3 @@
-// ================================================
-// ✅ Middleware: authenticateAPI
-// Description: Validates API key + portal name from headers
-// ================================================
-
 import { Request, Response, NextFunction } from "express";
 import { poolPromise, sql } from "../config/db";
 
@@ -11,51 +6,53 @@ const authenticateAPI = async (
   res: Response,
   next: NextFunction
 ) => {
-  const portalName = req.headers["skyx-portal-id"] as string;
   const rawApiKey = req.headers["skyx-api-key"] as string;
 
-  console.log("🔍 Incoming Headers:");
-  console.log(" - skyx-portal-id:", portalName);
-  console.log(" - skyx-api-key:", rawApiKey);
-
-  if (!portalName || !rawApiKey) {
-    console.warn("❌ Missing one or both required headers");
-    return res.status(400).json({
-      error: "Missing skyx-portal-id or skyx-api-key header",
-    });
+  if (!rawApiKey) {
+    console.warn("❌ Missing skyx-api-key header");
+    return res.status(400).json({ error: "Missing skyx-api-key header" });
   }
 
   try {
     const pool = await poolPromise;
-    console.log("📨 Executing ValidateOwnerApiKey with inputs:");
-    console.log(" - PlainApiKey:", rawApiKey);
-    console.log(" - PortalName:", portalName);
 
-    const result = await pool
+    // 🔍 Step 1: Look up hashed key and portal from view
+    const keyResult = await pool
       .request()
-      .input("PlainApiKey", sql.NVarChar(sql.MAX), rawApiKey)
-      .input("PortalName", sql.NVarChar(100), portalName)
-      .execute("ValidateOwnerApiKey");
+      .input("ApiKeyID", sql.NVarChar(256), rawApiKey).query(`
+        SELECT KeyHash, PortalName 
+        FROM vw_ActiveAPIKeys 
+        WHERE ApiKeyID = @ApiKeyID
+      `);
 
-    console.log("✅ Stored Procedure Result:");
-    console.log(result.recordset);
+    const keyRecord = keyResult.recordset?.[0];
 
-    const isValid = result.recordset?.[0]?.IsValid === true;
-
-    if (!isValid) {
-      console.warn("❌ Validation failed:", result.recordset);
-      return res.status(403).json({ error: "Invalid portal credentials" });
+    if (!keyRecord) {
+      console.warn("❌ API key not found in view");
+      return res.status(403).json({ error: "Invalid API key" });
     }
 
-    (req as any).portalName = portalName;
+    const { KeyHash, PortalName } = keyRecord;
+
+    // 🔐 Step 2: Validate via SP
+    const validateResult = await pool
+      .request()
+      .input("ApiKey", sql.NVarChar(256), KeyHash)
+      .execute("ValidateApiKey");
+
+    if (!validateResult.recordset?.[0]) {
+      console.warn("❌ API key hash is invalid according to SP");
+      return res.status(403).json({ error: "API key validation failed" });
+    }
+
+    console.log("✅ API key authenticated:", PortalName);
+    (req as any).portalName = PortalName;
     next();
   } catch (error: any) {
-    console.error("❌ API Key Validation Error:", error);
-    const message =
-      error?.originalError?.info?.message || error.message || "Unknown error";
+    console.error("❌ API Key Auth Error:", error.message || error);
     res.status(500).json({
-      error: "API key validation failed",
-      details: message,
+      error: "API key validation error",
+      details: error.message || "Unknown error",
     });
   }
 };

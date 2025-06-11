@@ -1,3 +1,4 @@
+//Portal-Entities - Portal.ts
 export interface Portal {
   portalId: string;
   portalName: string;

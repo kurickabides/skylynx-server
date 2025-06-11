@@ -13,7 +13,7 @@ const getAllUsers = async () => {
   }
 };
 
-// ✅ Fetch a single user by ID using stored procedure  
+// ✅ Fetch a single user by ID using stored procedure
 const getUserById = async (userId: string) => {
   try {
     const pool = await poolPromise;
@@ -103,6 +103,44 @@ const validateUserByEmail = async (email: string) => {
     throw error;
   }
 };
+// ✅ Create a new user via CreateUserSignUp stored procedure
+const createUserSignUp = async (
+  portalName: string,
+  providerName: string | null,
+  username: string,
+  email: string,
+  passwordHash: string,
+  profileFields: { FieldID: string; FieldValue: string }[]
+): Promise<string> => {
+  try {
+    const pool = await poolPromise;
+    const table = new sql.Table();
+    table.columns.add("FieldID", sql.UniqueIdentifier);
+    table.columns.add("FieldValue", sql.NVarChar(sql.MAX));
+    table.columns.add("FieldName", sql.NVarChar(256)); // Optional, unused in SP
+
+    profileFields.forEach((field) =>
+      table.rows.add(field.FieldID, field.FieldValue, null)
+    );
+
+    const result = await pool
+      .request()
+      .input("PortalName", sql.NVarChar(256), portalName)
+      .input("ProviderName", sql.NVarChar(256), providerName)
+      .input("UserName", sql.NVarChar(256), username)
+      .input("Email", sql.NVarChar(256), email)
+      .input("PasswordHash", sql.NVarChar(sql.MAX), passwordHash)
+      .input("ProfileFields", table)
+      .output("UserID", sql.NVarChar(128))
+      .execute("CreateUserSignUp");
+
+    return result.output.UserID;
+  } catch (error) {
+    console.error("❌ Error in CreateUserSignUp:", error);
+    throw error;
+  }
+};
+
 
 // ✅ Export all functions
 export default {
@@ -112,4 +150,5 @@ export default {
   assignUserRole,
   getUserRoles,
   validateUserByEmail,
+  createUserSignUp, // ✅ Add this line
 };
