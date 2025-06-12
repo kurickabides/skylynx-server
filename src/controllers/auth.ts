@@ -1,13 +1,25 @@
 import { Request, Response } from "express";
 import authModel from "../services/authModel";
 import userModel from "../services/userModel";
+import {ProfileField} from "./types";
 
+import { types } from "util";
 const { hashPassword, comparePasswords, generateToken } = authModel;
 const { createUserSignUp } = userModel;
 
 const signup = async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const {
+      username,
+      email,
+      password,
+      profileFields = [],
+    }: {
+      username: string;
+      email: string;
+      password: string;
+      profileFields: ProfileField[];
+    } = req.body;
 
     if (!username || !email || !password) {
       return res
@@ -18,17 +30,12 @@ const signup = async (req: Request, res: Response) => {
     const hashedPassword = await hashPassword(password);
 
     const userId = await createUserSignUp(
-      "SkyLynxNet",
-      null,
+      "SkyLynxNet", // PortalName
+      null, // ProviderName (optional)
       username,
       email,
       hashedPassword,
-      [
-        {
-          FieldID: "B98CFE71-0FEF-4B30-BD98-87AEBACF80D5",
-          FieldValue: "6787724308",
-        },
-      ]
+      profileFields
     );
 
     return res.status(201).json({
@@ -40,6 +47,7 @@ const signup = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const login = async (req: Request, res: Response) => {
   try {
