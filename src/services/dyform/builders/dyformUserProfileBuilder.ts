@@ -1,31 +1,41 @@
 // ================================================
-// ✅ Builder: dyformBuilder
+// ✅ Builder: dyformUserProfileBuilder
 // Description: Builds DyFormViewModel for user profile
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
-// Filename: dyformBuilder.ts
+// Filename: dyformUserProfileBuilder.ts
 // ================================================
 
 import { loadUserProfileValues } from "../repositories/dyformRepository";
-import { getPMContextStub } from "../helpers/dyformContextHelper";
 import { mapUserProfileResults } from "../helpers/resultMapper";
 import { DyFormViewModel, ViewModelName } from "../../../entities/dyform/types";
 import { userProfileMap } from "../config/userProfileMap";
 
 export async function buildUserProfileViewModel(
   userId: string,
-  viewModelName: ViewModelName.vmUserProfile_View | ViewModelName.vmUserProfile_Edit
+  viewModelName:
+    | ViewModelName.vmUserProfile_View
+    | ViewModelName.vmUserProfile_Edit,
+  portalName: string,
+  portalId: string,
+  providerId?: string
 ): Promise<DyFormViewModel> {
-  const context = getPMContextStub();
-  const recordsets = await loadUserProfileValues(userId);
+  const recordsets = await loadUserProfileValues(
+    userId,
+    portalName,
+    portalId,
+    providerId,
+  );
+
   const meta = userProfileMap[viewModelName];
   const sections = mapUserProfileResults(recordsets);
 
   return {
     viewModel: viewModelName,
     userId,
-    ...context,
+    portalName,
+    moduleName: "UserManagement", // stub or derive later
     context: {
       formName: meta.formName,
       template: meta.template,

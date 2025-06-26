@@ -6,20 +6,18 @@
 // Company: CryoRio
 // Filename: dyformController.ts
 // ================================================
-
 import { Request, Response } from "express";
 import { buildDyFormViewModel } from "../services/dyform/factories/dyformFactory";
 import { ViewModelName } from "../entities/dyform/types";
 
 export async function getDyFormViewModel(req: Request, res: Response) {
   const { viewModelName } = req.params;
-  const { userId } = req.body;
+  const { userId, providerId } = req.body;
 
   if (!userId) {
     return res.status(400).json({ error: "Missing required field: userId" });
   }
 
-  // 🔍 Validate and convert viewModelName string to ViewModelName enum
   const enumKey = Object.values(ViewModelName).find((v) => v === viewModelName);
   if (!enumKey) {
     return res
@@ -28,7 +26,17 @@ export async function getDyFormViewModel(req: Request, res: Response) {
   }
 
   try {
-    const result = await buildDyFormViewModel(enumKey as ViewModelName, userId);
+    const portalName = req.portalName as string;
+    const portalId = req.portalId as string;
+
+    const result = await buildDyFormViewModel(
+      enumKey as ViewModelName,
+      userId,
+      portalName,
+      portalId,
+      providerId
+    );
+
     res.json(result);
   } catch (err: any) {
     console.error("❌ DyForm load error:", err);
