@@ -286,80 +286,130 @@ SkyLynx uses the **DyForm** system to enable dynamic, metadata-driven form gener
 
 ## 🧩 DyForm Tables (Metadata Only)
 
-| **Table**               | **Description**                                                  |
-|------------------------|------------------------------------------------------------------|
-| `DyForm`               | Represents a logical form (e.g. `UserProfile`)                   |
-| `DyFormSection`        | Subgroup of fields (e.g. `Contact Info`, `Billing Info`)         |
-| `DyFormField`          | Each form field definition                                       |
-| `DyFormExpression`     | Instructions on how to resolve value locations                   |
-| `DyFormFieldType`      | Metadata about input type (e.g., `TextInput`, `EmailInput`)      |
-| `DyFormDomains`        | Top-level metadata for field domains (value/range/etc.)          |
-| `DyFormDomainValues`   | Key-value pairs for each defined domain                          |
-| `DyFormFieldRule`      | Validation, visibility, and computed rules per field             |
-| `DyFormRuleType`       | Master list for rule behavior types                              |
-| `DyFormRuleSyntax`     | Defines how rule expressions are parsed and interpreted          |
-| `DyFormResolverType`   | Lookup for how field values are resolved                         |
-| `DyFormDomainType`     | Classifies types of domains (e.g., `range`, `value`, `regex`)    |
+| **Table**                         | **Description**                                                                 |
+|----------------------------------|---------------------------------------------------------------------------------|
+| `DyForm`                         | Represents a logical form (e.g., `UserProfile`)                                 |
+| `DyFormSection`                  | Defines individual section containers (e.g., `Contact Info`)                    |
+| `DyFormSections`                 | Links sections to forms with sort order and optional nesting                    |
+| `DyFormField`                    | Stores raw field metadata including type, label, domain                         |
+| `DyFormFieldType`               | Master list of input types (e.g., `TextInput`, `DatePicker`, `Dropdown`)        |
+| `DyFormDomains`                  | Domain source metadata (e.g., `CountryList`, `StateCodes`)                      |
+| `DyFormDomainValues`            | Key-value entries for each domain (value + label + order)                       |
+| `DyFormDomainType`              | Classifies domains as value-list, range, etc.                                   |
+| `DyFormExpression`              | Field-level expressions for computing or resolving dynamic values               |
+| `DyFormResolverType`            | Lookup for how data is resolved (e.g., `Static`, `API`, `Lookup`, `Expression`) |
+| `DyFormResolverContext`         | Scoped context keys (e.g., `FieldDefault`, `VisibilityRule`)                    |
+| `DyFormResolvers`               | Form-level resolver logic mapped by context and type                            |
+| `DyFormSectionResolvers`        | Section-specific resolver logic by context and type                             |
+| `DyFormFieldRule`               | Rules applied to fields (validation, enable/disable, computed)                  |
+| `DyFormRuleType`                | Defines rule behavior (e.g., `Required`, `Regex`, `VisibleIf`)                  |
+| `DyFormRuleSyntax`              | Parsing approach used in rule expressions (e.g., `Simple`, `Lambda`)            |
+| `DyFormRuleDefinition`          | Declarative rule logic based on reusable expressions                            |
+| `DyFormRuleTarget`              | Links rules to form field(s), section(s), or view(s)                             |
+| `DyFormViewModelDefinition`     | Named ViewModel outputs for templated rendering                                 |
+| `DyFormFieldSectionDefinition`  | Maps fields into sections within a ViewModel                                    |
+| `DyFormDataSourceDefinition`    | Resolves field data source paths and binding instructions                       |
 
----
 
 ## 🧠 Schema Model
 
 ```mermaid
-
 erDiagram
 
-  DyForm ||--o{ DyFormSection : has
-  DyFormSection ||--o{ DyFormField : contains
-  DyFormSection }|--|| DyFormSection : ParentSection
+  DyForm ||--o{ DyFormSections : contains
+  DyFormSections ||--|| DyForm : Form
+  DyFormSections ||--|| DyFormSection : section
+  DyFormSections ||--|| DyFormSections : parentSection
 
   DyFormField ||--|| DyFormFieldType : uses
-  DyFormField ||--o{ DyFormExpression : resolves
-  DyFormField ||--o{ DyFormFieldRule : has
-  DyFormField ||--|| DyFormDomains : uses
+  DyFormField ||--|| DyFormDomains : domainSource
 
+  DyFormDomains ||--|| DyFormDomainType : typed_as
   DyFormDomains ||--o{ DyFormDomainValues : has
-  DyFormFieldRule ||--|| DyFormRuleType : typed_as
-  DyFormFieldRule ||--|| DyFormRuleSyntax : interprets_with
-  DyFormExpression ||--|| DyFormResolverType : uses
-  DyFormFieldRule ||--|| DyFormResolverType : uses
+
+  DyFormFieldRule ||--|| DyFormField : validates
+  DyFormFieldRule ||--|| DyFormResolverType : ruleType
+  DyFormFieldRule ||--|| DyFormRuleType : logicType
+
+  DyFormExpression ||--|| DyFormResolverType : expressionType
+
+  DyFormFieldSectionDefinition ||--|| DyFormField : usesField
+  DyFormFieldSectionDefinition ||--|| DyFormSection : inSection
+  DyFormFieldSectionDefinition ||--|| DyFormViewModelDefinition : partOfViewModel
+  DyFormFieldSectionDefinition ||--|| DyFormDataSourceDefinition : getsDataFrom
+
+  DyFormRuleDefinition ||--|| DyFormExpression : basedOn
+  DyFormRuleDefinition ||--|| DyFormResolverType : type
+
+  DyFormRuleTarget ||--|| DyFormRuleDefinition : rule
+  DyFormRuleTarget ||--|| DyFormField : optionalField
+  DyFormRuleTarget ||--|| DyFormSection : optionalSection
+  DyFormRuleTarget ||--|| DyFormViewModelDefinition : forView
+
+  DyFormResolvers ||--|| DyForm : resolvesFor
+  DyFormResolvers ||--|| DyFormResolverContext : inContext
+  DyFormResolvers ||--|| DyFormResolverType : type
+
+  DyFormSectionResolvers ||--|| DyForm : inForm
+  DyFormSectionResolvers ||--|| DyFormSection : forSection
+  DyFormSectionResolvers ||--|| DyFormResolverContext : context
+  DyFormSectionResolvers ||--|| DyFormResolverType : resolver
 
   DyForm {
     UUID FormID PK
-    string FormName
-    string Description
-    datetime CreatedAt
+    NVARCHAR(100) FormName
+    NVARCHAR(255) Description
+    DATETIME CreatedAt
   }
 
   DyFormSection {
     UUID SectionID PK
+    NVARCHAR(100) SectionName
+    INT SortOrder
+    NVARCHAR(255) Label
+  }
+
+  DyFormSections {
+    UUID FormSectionID PK
     UUID FormID FK
-    UUID ParentSectionID FK
-    string SectionName
-    int SortOrder
+    UUID SectionID FK
+    UUID ParentFormSectionID FK
+    INT SortOrder
   }
 
   DyFormField {
-    UUID FieldID PK
-    UUID SectionID FK
+    UUID DyFormFieldID PK
     UUID FieldTypeID FK
+    NVARCHAR(255) Tooltip
+    NVARCHAR(255) Label
     UUID DomainID FK
-    string FieldName
-    string Tooltip
-    int SortOrder
   }
 
   DyFormFieldType {
     UUID FieldTypeID PK
-    string FieldTypeName
-    string ComponentName
+    NVARCHAR(100) FieldTypeName
+    NVARCHAR(100) ComponentName
   }
 
-  DyFormExpression {
-    UUID ExpressionID PK
-    UUID FieldID FK
-    UUID ResolverTypeID FK
-    json FieldExpression
+  DyFormDomains {
+    UUID DomainID PK
+    NVARCHAR(100) Name
+    UUID DomainTypeID FK
+    NVARCHAR(255) Description
+  }
+
+  DyFormDomainType {
+    UUID DomainTypeID PK
+    NVARCHAR(100) DomainTypeName
+    NVARCHAR(255) Description
+  }
+
+  DyFormDomainValues {
+    UUID DomainValueID PK
+    UUID DomainID FK
+    NVARCHAR(200) Value
+    NVARCHAR(200) Label
+    INT SortOrder
   }
 
   DyFormFieldRule {
@@ -367,51 +417,107 @@ erDiagram
     UUID FieldID FK
     UUID RuleTypeID FK
     UUID ResolverTypeID FK
-    UUID RuleSyntaxID FK
-    text RuleExpression
-    boolean IsEnabled
-    int Priority
-    text ErrorMessage
+    NVARCHAR(MAX) RuleExpression
+    BIT IsEnabled
+    INT Priority
+    NVARCHAR(255) ErrorMessage
   }
 
   DyFormRuleType {
     UUID RuleTypeID PK
-    string Name
-    string Description
-  }
-
-  DyFormRuleSyntax {
-    UUID RuleSyntaxID PK
-    string SyntaxName
-    string Description
+    NVARCHAR(100) Name
+    NVARCHAR(255) Description
   }
 
   DyFormResolverType {
     UUID ResolverTypeID PK
-    string Name
-    string Description
+    NVARCHAR(100) Name
+    NVARCHAR(255) Description
   }
 
-  DyFormDomains {
-    UUID DomainID PK
-    string Name
-    UUID DomainTypeID FK
-    string Description
+  DyFormRuleSyntax {
+    UUID RuleSyntaxID PK
+    NVARCHAR(100) SyntaxName
+    NVARCHAR(255) Description
+    DATETIME CreatedAt
+    DATETIME UpdatedAt
   }
 
-  DyFormDomainValues {
-    UUID ValueID PK
-    UUID DomainID FK
-    string Label
-    string Value
-    int SortOrder
+  DyFormExpression {
+    UUID DyFormExpressionID PK
+    NVARCHAR(MAX) Expression
+    UUID ResolverTypeID FK
+    NVARCHAR(255) Description
   }
 
-  DyFormDomainType {
-    UUID DomainTypeID PK
-    string DomainTypeName
-    string Description
+  DyFormViewModelDefinition {
+    UUID ViewModelDefinitionID PK
+    NVARCHAR(100) ViewModelName
+    NVARCHAR(255) DestKey
   }
+
+  DyFormDataSourceDefinition {
+    UUID DyFormDSDefinitionID PK
+    NVARCHAR(255) SourceKey
+    BIT IsDirectProperty
+    NVARCHAR(MAX) SourcePath
+  }
+
+  DyFormFieldSectionDefinition {
+    UUID SectionDefinitionID PK
+    UUID SectionID FK
+    UUID DyFormFieldID FK
+    UUID ViewModelDefinitionID FK
+    INT SortOrder
+    UUID DyFormDSDefinitionID FK
+  }
+
+  DyFormRuleDefinition {
+    UUID RuleDefinitionID PK
+    NVARCHAR(100) RuleKey
+    UUID ResolverTypeID FK
+    UUID DyFormExpressionID FK
+    NVARCHAR(255) Description
+  }
+
+  DyFormRuleTarget {
+    UUID RuleTargetID PK
+    UUID RuleDefinitionID FK
+    UUID ViewModelDefinitionID FK
+    UUID DyFormFieldID FK
+    UUID SectionID FK
+    INT SortOrder
+    NVARCHAR(1000) Notes
+  }
+
+  DyFormResolverContext {
+    NVARCHAR(50) Context PK
+    NVARCHAR(255) Description
+  }
+
+  DyFormResolvers {
+    UUID DyFormID FK
+    NVARCHAR(50) ResolverContext FK
+    UUID ResolverTypeID FK
+    NVARCHAR(255) ResolverTarget
+    NVARCHAR(1000) Description
+    DATETIME CreatedAt
+    DATETIME UpdatedAt
+  }
+
+  DyFormSectionResolvers {
+    UUID DyFormID FK
+    UUID SectionID FK
+    NVARCHAR(50) ResolverContext FK
+    UUID ResolverTypeID FK
+    NVARCHAR(255) ResolverTarget
+    BIT IsActive
+    NVARCHAR(1000) Notes
+    DATETIME CreatedAt
+    DATETIME UpdatedAt
+  }
+
+
 ```
 
 
@@ -550,13 +656,15 @@ In the initial `DyForm` schema:
 
 ```mermaid
 erDiagram
+
   DyFormSection {
     UUID SectionID PK
-    UUID ParentSectionID FK -- Self-referencing
+    UUID ParentSectionID FK
     UUID FormID FK
     string SectionName
     int SortOrder
   }
+
 ```
 
 - `DyFormSection` was structured as a **strict hierarchy** using `ParentSectionID`.
@@ -833,6 +941,18 @@ graph TD
 | `domains[]`  | List of domain sets and their options   |
 
 ---
+### Server Flow to UI
+``` mermaid
+flowchart TD
+  F[Form: vmUserProfile_View]
+  F --> C1[Section: Contact Info]
+  F --> C2[Section: Preferences]
+  F --> R[Form Resolver: POST /api/user/update-profile]
+
+  C1 --> R1[Section Resolver: GET /api/user/email]
+  C2 --> R2[Section Resolver: PATCH /api/user/preferences]
+
+```
 
 ## 🔁 What Client Sends Back
 
@@ -988,30 +1108,51 @@ J --> K
 
 ---
 
-## 🚦 Request Flow (GET /api/forms/:formName)
+## 🚦 Request Flow (GET /api/forms/:vmUserProfile_View)
 
-1. Get all sections under `formName`
+1. Get all sections under `vm`
 2. For each section, pull `DyformFields` with sort order
 3. Resolve current values from their declared source tables/columns
 4. Return shape:
 
 ```json
 {
-  "form": "UserProfile",
+  "viewModel": "vmUserProfile_View",
+  "userId": "abc123",
+  "context": {
+    "formName": "UserProfile",
+    "resolver": {
+      "method": "POST",
+      "path": "/api/user/update-profile",
+      "type": "UserProfileSubmission"
+    },
+    "template": "DefaultUserTemplate",
+    "version": "v1.0"
+  },
   "sections": [
     {
       "name": "Contact Info",
-      "fields": [
+      "resolvers": [
         {
-          "label": "Email",
-          "value": "user@example.com",
-          "required": true,
-          "type": "Email"
+          "context": "load",
+          "method": "GET",
+          "type": "User",
+          "target": "User.Email",
+          "path": "/api/user/email"
+        },
+        {
+          "context": "submit",
+          "method": "PATCH",
+          "type": "User",
+          "target": "User.Email",
+          "path": "/api/user/email"
         }
-      ]
+      ],
+      "fields": [ ... ]
     }
   ]
 }
+
 ```
 
 # ✅ CRUD Stored Procedure (SP) Creation Guidelines
@@ -1247,4 +1388,22 @@ erDiagram
     DyFormSection ||--o{ DyFormSectionDefinition : contains
     DyFormFielDefinition ||--o{ DyFormSectionDefinition : maps
     DyFormViewModelDefintions ||--o{ DyFormSectionDefinition : targets
+```
+
+
+
+### Server Design
+
+  ``` mermaid
+flowchart TD
+  UI["React Client"]
+  UI -->|GET /api/dform/viewmodel/UserProfile| Controller
+
+  Controller --> Factory
+  Factory --> Builder
+  Builder --> Repository
+  Repository -->|SP Calls| Database
+
+  Builder --> Factory
+  Factory -->|Final Output| UI
 ```
