@@ -32,7 +32,7 @@ docker-compose -f docker-compose-dev.yml up -it
 > 
 ```
 docker-compose -f docker-compose-dev.yml up -d or
-docker-compose -f docker-compose-dev.yml --env-file .env.local up --build
+//
 ```
 
 > to stop

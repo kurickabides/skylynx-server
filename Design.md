@@ -703,6 +703,27 @@ Key Components:
 
 ---
 
+``` mermaid
+erDiagram
+
+    DyFormViewModelDefinition ||--o{ DyFormViewModelLineage : Children
+    DyFormViewModelDefinition ||--o{ DyFormFieldSectionDefinition : MapsFields
+    DyFormViewModelDefinition ||--o{ ProtosViewModelDefinition : UsedInProtos
+    ProtosTemplateVersion ||--o{ ProtosViewModelDefinition : Versioned
+    ProtosTargetType ||--o{ ProtosViewModelDefinition : Targets
+
+    DyFormViewModelDefinition {
+        UUID ViewModelDefinitionID
+        string ViewModelName
+    }
+
+    ProtosViewModelDefinition {
+        UUID ProtosViewModelDefinitionID
+        UUID TemplateVersionID
+        UUID TargetTypeID
+        UUID TargetObjectID --> DyFormViewModelDefinitionID
+    }
+```
 ### 🧬 What This Enables
 
 | Capability | Description |
@@ -1407,3 +1428,18 @@ flowchart TD
   Builder --> Factory
   Factory -->|Final Output| UI
 ```
+
+| Field Label           | DyFormFieldID                            | SourceKey         | DyFormDSDefinitionID                       | TableName     |
+|----------------------|-------------------------------------------|-------------------|--------------------------------------------|---------------|
+| User ID              | 45DC9A84-4F95-4F99-A347-259CEF7CCA00     | UserID            | 598B782D-0BDE-4731-AE2C-4EE0B919474B       | AspNetUsers |
+| Phone Confirmed      | 7253B9C3-D631-4E69-9B69-2B493662DB0F     | PhoneConfirmed    | C8D2E2BC-33AD-444C-9B44-074751377775       | AspNetUsers |
+| Phone                | D2462C27-34A2-4CA3-83AA-DD0858FD7DCA     | PhoneNumber       | 405D82D8-86B6-47C3-AAD2-8A0B243EC0BA       | AspNetUsers |
+| User Name            | ABF9E2D2-71F4-439D-BE18-9284BFD347C2     | UserName          | D4CA7736-5DB4-4FDD-9C93-6DBDC990BD49       | AspNetUsers |
+| Email                | 9B7A62E1-1BCE-47AC-BB0C-C3720DEB9289     | Email             | 0E8E640D-911A-4DC3-9693-B203DBE658F9       | AspNetUsers |
+| Security Stamp       | 185DC9C5-9560-4A68-B3F2-C736A78514A1     | SecurityStamp     | D20A6CAB-207C-4B13-88D2-9C2F96F71D00       | AspNetUsers |
+| Access Failed Count  | 35ECA553-EAB8-49A5-9318-C97CB6764563     | AccessFailedCount | BCB6B2E5-23D2-4EC5-9584-64CFA68C8AA3       | AspNetUsers |
+| Lockout Enabled      | CCBB35C8-AA1C-4D17-92C3-CA219BEAB0B4     | LockoutEnabled    | 30DD3653-5EC8-4E36-B4D4-0C4E4F9E4A0B       | AspNetUsers   |
+| Two-Factor Enabled   | 552F169A-7F77-4EF0-990E-D9FEC3867D07     | TwoFactorEnabled  | 38160382-98B2-494A-A561-53B43EBF7DB7       | AspNetUsers   |
+| Email Confirmed      | 86435237-9F68-4E1C-A0B8-F60405E1208B     | EmailConfirmed    | AD3AD5FC-5B1B-4FD9-AE4F-5904850FC1E8       | AspNetUsers   |
+
+
