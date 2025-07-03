@@ -1443,3 +1443,72 @@ flowchart TD
 | Email Confirmed      | 86435237-9F68-4E1C-A0B8-F60405E1208B     | EmailConfirmed    | AD3AD5FC-5B1B-4FD9-AE4F-5904850FC1E8       | AspNetUsers   |
 
 
+  ``` mermaid
+flowchart TD
+    subgraph SQL Server
+        A["SkylynxPortalViewModelTree SP"]
+        B["DyFormFieldSectionDefinition (with SortOrder)"]
+        C["ProtosTemplateViewModels"]
+    end
+
+    subgraph Server
+        D["getProtosTreeViewModelConfig()"]
+        E["mapTreeFromResultSets()"]
+        F["DyForm Builder (Factory.load(viewModel))"]
+    end
+
+    A -->|uses SortOrder| B
+    A -->|returns ViewModel + Variant rows| D
+    D --> E --> F
+```
+
+
+  ``` mermaid
+erDiagram
+  DyFormViewModelDefinition ||--o{ DyFormFieldSectionDefinition : has
+  DyFormFieldSectionDefinition }o--|| DyFormSection : references
+  DyFormSection ||--o{ DyFormSectionField : has
+  DyFormSectionField }o--|| DyFormField : references
+  DyFormField }o--|| DyFormFieldType : has
+```
+
+✅ Updated Pattern Name: ContainerBuilder
+Here’s how that affects our architectural thinking:
+
+  Layer	Builder/Pattern	Responsibility
+  🧱 Individual VM	ViewModelBuilder	Builds sections + fields for a single ViewModel
+  🧩 Composite VM	ContainerBuilder	Traverses the full tree, assembles all children
+  🏭 Factory	FormBuilderFactory	Instantiates the correct builder (either ViewModel or Container) based on the context
+
+  
+  ``` mermaid
+flowchart TD
+
+A[POST /api/viewmodel/vmUserProfile_Form] --> B[FormBuilderFactory]
+
+subgraph Server Builders
+    B --> C[ContainerBuilder]
+    C --> D[Resolve DyForm layout from DyForm tables]
+    C --> E[For each child ViewModel]
+    E --> F[Resolve full ViewModelName e.g. vmUserProfile_View]
+    F --> G[Find SP in ProtosViewModelResolver]
+    G --> H[Run SP, return data]
+    H --> I[ViewModelBuilder creates sections, fields]
+    I --> J[Attach to parent Container]
+end
+
+J --> Z[Return full DyFormViewModel with data]
+```
+## Server flow
+
+``` mermaid
+flowchart TD
+
+A["vmUserProfile_Form"] --> B["Get TemplateVersionID"]
+B --> C["GetProtosTemplateLinkByTargetObjectID"]
+C --> D["Returns ResolverID"]
+D --> E["Call GetResolverById"]
+E --> F["Get Method = EXEC, Path = LoadUserFullProfileViewModel"]
+F --> G["Call SP: LoadUserFullProfileViewModel(@UserID)"]
+G --> H["Result = SkylynxUserProfileData"]
+```

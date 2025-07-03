@@ -1,6 +1,6 @@
 // ================================================
 // ✅ Repository: dyformRepository
-// Description: Loads data via LoadUserFullProfileViewModel SP
+// Description: Handles DyForm resolver-based execution
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
@@ -10,38 +10,39 @@
 import { sql, poolPromise } from "../../../config/db";
 import { IRecordSet } from "mssql";
 
-export async function loadUserProfileValues(
-  userId: string,
-  portalName: string,
-  portalId?: string,
-  providerId?: string
-): Promise<any[]> {
-  try {
-    const pool = await poolPromise;
-    const request = pool.request();
+export class DyformRepository {
+  // ================================================
+  // ✅ Method: runResolver
+  // Description: Dynamically executes resolver target (SP or JSON)
+  // ================================================
+  static async runResolver(
+    resolverType: string,
+    target: string,
+    params: { [key: string]: any }
+  ): Promise<Record<string, any>> {
+    try {
+      if (resolverType === "StoredProcedure" || resolverType === "sp") {
+        const pool = await poolPromise;
+        const request = pool.request();
 
-    request.input("UserID", sql.NVarChar(128), userId);
-    request.input("PortalName", sql.NVarChar(256), portalName);
+        for (const [key, value] of Object.entries(params)) {
+          request.input(key, value);
+        }
 
-    if (portalId) {
-      request.input("PortalID", sql.UniqueIdentifier, portalId);
+        const result = await request.execute(target);
+        const record = result.recordset?.[0] || {};
+
+        return record;
+      }
+
+      if (resolverType === "MockJson") {
+        return JSON.parse(target);
+      }
+
+      throw new Error(`Unsupported resolver type: ${resolverType}`);
+    } catch (err) {
+      console.error("❌ Resolver execution failed:", err);
+      throw err;
     }
-
-    if (providerId) {
-      request.input("ProviderID", sql.UniqueIdentifier, providerId);
-    }
-    const result = await request.execute("LoadUserFullProfileViewModel");
-
-    // ✅ Explicitly cast result.recordsets as IRecordSet<any>[]
-    const recordsets = result.recordsets as IRecordSet<any>[];
-
-    if (!Array.isArray(recordsets)) {
-      throw new Error("recordsets is not an array");
-    }
-
-    return recordsets;
-  } catch (err) {
-    console.error("❌ SP Execution Error:", err);
-    throw err;
   }
 }

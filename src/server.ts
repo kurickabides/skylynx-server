@@ -11,6 +11,7 @@ import portalRoutes from "./routes/portalRoutes";
 import { poolPromise } from "./config/db";
 import authenticateAPI from "./middleware/authenticateAPI"; // ✅ renamed for portal key auth
 import dyformRoutes from "./routes/dyformRoutes";
+import protosRoutes  from "./routes/protos";
 
 dotenv.config();
 
@@ -27,6 +28,8 @@ app.use("/api/users", authenticateAPI, userRoutes);
 app.use("/api/roles", authenticateAPI, roleRoutes);
 app.use("/api/portals", authenticateAPI, portalRoutes);
 app.use("/api/dyform", authenticateAPI, dyformRoutes);
+app.use("/api/protos/", authenticateAPI, protosRoutes);
+
 
 // Base API Route
 app.get("/api", (req: Request, res: Response) => {

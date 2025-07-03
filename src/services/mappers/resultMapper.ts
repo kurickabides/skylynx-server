@@ -14,7 +14,7 @@ import {
   vmAddressModel,
   vmProviderProfileFieldModel,
   vmProviderProfileValueModel,
-} from "../../../entities/dyform/types";
+} from "../../entities/dyform/types";
 
 export function mapUserProfileResults(recordsets: any[]): DyFormSection[] {
   const sections: DyFormSection[] = [];

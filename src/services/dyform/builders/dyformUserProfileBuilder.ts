@@ -8,7 +8,7 @@
 // ================================================
 
 import { loadUserProfileValues } from "../repositories/dyformRepository";
-import { mapUserProfileResults } from "../helpers/resultMapper";
+import { mapUserProfileResults } from "../../mappers/resultMapper";
 import { DyFormViewModel, ViewModelName } from "../../../entities/dyform/types";
 import { userProfileMap } from "../config/userProfileMap";
 
