@@ -12,7 +12,7 @@ import { poolPromise } from "./config/db";
 import authenticateAPI from "./middleware/authenticateAPI"; // ✅ renamed for portal key auth
 import dyformRoutes from "./routes/dyformRoutes";
 import protosRoutes  from "./routes/protos";
-
+import nimbusCoreRoutes  from "./routes/nimbusCore";
 dotenv.config();
 
 const app = express();
@@ -29,7 +29,7 @@ app.use("/api/roles", authenticateAPI, roleRoutes);
 app.use("/api/portals", authenticateAPI, portalRoutes);
 app.use("/api/dyform", authenticateAPI, dyformRoutes);
 app.use("/api/protos/", authenticateAPI, protosRoutes);
-
+app.use("/api/nimbus/", authenticateAPI, nimbusCoreRoutes);
 
 // Base API Route
 app.get("/api", (req: Request, res: Response) => {

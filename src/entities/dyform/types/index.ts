@@ -7,18 +7,39 @@
 // Filename:/entities/dyform/types/index.ts
 // ================================================
 
-import { SkylynxDataModel } from "../../skylynx/types";
+import { SkylynxDataModel, IKeyValuePair } from "../../skylynx/types";
+
+// ================================================
+// ✅ Interface: LoadPortalFormRequest
+// Description: Load request payload for dynamic form ViewModel
+// ================================================
+export interface LoadPortalFormRequest {
+  templateName: string;
+  portalName: string;
+  moduleName: string;
+  params?: IKeyValuePair[];
+}
 
 export enum ViewModelName {
   vmUserProfile_View = "vmUserProfile_View",
   vmUserProfile_Edit = "vmUserProfile_Edit",
   vmPortalAdmin_View = "vmPortalAdmin_View",
 }
+
 export enum ViewNames {
   view = "View",
   edit = "Edit",
   admin = "Admin",
 }
+export interface DyFormSections {
+  sectionId: string;
+  sectionName: string;
+  label: string;
+  sortOrder: number;
+  fields?: DyFormField[];
+  children?: DyFormSections[];
+}
+
 export interface DyFormViewModel {
   viewModel: string;
   userId?: string;
@@ -36,6 +57,11 @@ export interface DyFormViewModel {
   };
   sections: DyFormSection[];
 }
+export interface DyFormFieldType {
+  fieldTypeId: string;
+  fieldTypeName: string;
+  componentName: string;
+}
 
 export interface DyFormSection {
   name: string;
@@ -50,12 +76,16 @@ export interface DyFormField {
   label: string;
   tooltip?: string;
   placeholder?: string;
-  value: any;
-  type: string;
+  value?: any;
+  fieldType: DyFormFieldType;
   readonly?: boolean;
   required?: boolean;
+  sortOrder: number;
   rules?: DyFormRule[];
   domain?: DyFormDomain;
+  sourceKey: string;
+  sourcePath: string;
+  isDirectProperty: boolean;
 }
 
 export interface DyFormRule {
@@ -81,14 +111,5 @@ export interface DyFormResolver {
   method?: string;
   notes?: string;
 }
-
-// ================================================
-// ✅ Interfaces: DyForm ViewModel Result Sets
-// Description: Matches result sets from GetUserFullProfileViewModel
-// Author: NimbusCore.OpenAI
-// Architect: Chad Martin
-// Company: CryoRio
-// ================================================
-
 
 

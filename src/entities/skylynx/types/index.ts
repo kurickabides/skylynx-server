@@ -6,6 +6,8 @@
 // Company: CryoRio
 // Filename:/entities/skylynx/types/index.ts
 // ================================================
+import { DyFormSections } from "../../dyform/types";
+
 export interface IResolver {
   resolverId: string;
   resolverType: string; // from ResolverType table
@@ -32,6 +34,29 @@ export interface SkylynxPortalViewModel {
   children?: SkylynxPortalViewModel[];
 }
 
+// ================================================
+// ✅ Interface: SkylynxPortalResponse
+// Description: Final portal form response with config, metadata, and resolved data
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename:skylynxPortalResponse.ts
+// ================================================
+
+export interface SkylynxPortalResponse {
+  viewModel: string;
+  portalName: string;
+  moduleName: string;
+
+  // Template config used to resolve and render this form
+  template?: ProtosTemplate;
+
+  // Fully resolved section + field structure (including nested sections)
+  sections: DyFormSections[];
+
+  // Keyed by ViewModelName, with each record holding data for that view
+  data: Record<string, SkylynxDataModel | SkylynxDataModel[]>;
+}
 
 
 // ================================================
@@ -106,3 +131,12 @@ export interface vmProviderProfileFieldModel extends SkylynxDataModel {
   IsRequired: boolean;
   SortOrder: number;
 }
+// ================================================
+// ✅ Entity: IKeyValuePair
+// Description: Represents a single input for any type or array
+// ================================================
+export interface IKeyValuePair {
+  key: string;
+  value: string;
+}
+
