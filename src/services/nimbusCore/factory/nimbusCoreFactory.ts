@@ -8,21 +8,22 @@
 // ================================================
 
 import { getProtosTreeViewModelConfig } from "../../protos/repository/protosRepository";
-import {
-  getResolverForViewModel,
-  loadDyFormMetadata,
-} from "../../dyform/repositories/dyformRepository";
+import { loadDyFormMetadata } from "../../dyform/repositories/dyformRepository";
 
 import { runResolver } from "../../helpers/resolverExecutor";
-import { mapResultsToFields } from "../../mappers/resultMapper";
-import {
+import { mapUserProfileResults } from "../../mappers/resultMapper";
 
+import {
   ViewModelParams,
+  SkylynxPortalViewModel,
+  SkylynxPortalConfig,
 } from "../../../entities/skylynx/types";
+
 import {
   DyFormViewModel,
+  DyFormSection,
+  DyFormField,
 } from "../../../entities/dyform/types";
-
 
 export class NimbusCoreFactory {
   // 📦 Entry point to load full DyForm ViewModel (structure + values)
@@ -31,31 +32,54 @@ export class NimbusCoreFactory {
     view: string,
     params: ViewModelParams
   ): Promise<DyFormViewModel> {
-    // 1️⃣ Get ViewModel tree for the form (includes sub-ViewModels)
-    const vmTree = await getViewModelTree(formVM);
+    // 1️⃣ Load full ViewModel tree config
+    const portalTree: SkylynxPortalConfig = await getProtosTreeViewModelConfig(
+      formVM
+    );
 
-    // 2️⃣ Loop through all ViewModels and build metadata + data
+    // 2️⃣ Get the active variant node
+    const targetView = portalTree.variants.find((v) => v.viewModel === view);
+    if (!targetView)
+      throw new Error(`ViewModel '${view}' not found in variants`);
+
+    // 3️⃣ Initialize the full ViewModel with context and structure
     const fullViewModel: DyFormViewModel = {
-      formVM,
-      view,
+      viewModel: targetView.viewModel,
+      portalName: targetView.portalName,
+      moduleName: targetView.moduleName,
+      context: {
+        formName: portalTree.viewModel,
+        template: targetView.template?.templateName || "",
+        version: String(targetView.template?.version || ""),
+        resolver: {
+          method: "POST",
+          path: "/api/nimbus/loadForm",
+          type: "Internal",
+        },
+      },
       sections: [],
-      fieldValues: {},
     };
 
-    for (const vm of vmTree) {
-      // 🔹 Step 3: Load DyForm metadata for current ViewModel
+    // 4️⃣ Traverse through children ViewModels
+    const vmChildren = targetView.children || [];
+    for (const vm of vmChildren) {
       const metadata = await loadDyFormMetadata(vm);
       fullViewModel.sections.push(...metadata.sections);
 
-      // 🔹 Step 4: Resolve associated data for ViewModel
-      const resolver = await getResolverForViewModel(vm);
-      const rawResults = await runResolver(resolver, params);
+      if (vm.template?.resolver?.target) {
+        const rawResults = await runResolver(vm.template.resolver, params);
+        const mapped = mapUserProfileResults(metadata.fields, rawResults);
 
-      // 🔹 Step 5: Map results to metadata FieldKeys
-      const mapped = mapResultsToFields(metadata.fields, rawResults);
-
-      // 🔹 Step 6: Merge field values
-      Object.assign(fullViewModel.fieldValues, mapped);
+        // Set values on fields directly (flattened into section.fields)
+        for (const section of metadata.sections) {
+          for (const field of section.fields) {
+            const mappedValue = mapped[field.fieldId];
+            if (mappedValue !== undefined) {
+              field.value = mappedValue;
+            }
+          }
+        }
+      }
     }
 
     return fullViewModel;

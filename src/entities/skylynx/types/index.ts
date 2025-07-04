@@ -59,3 +59,50 @@ export interface SkylynxPortalVariantContext {
   resolverId: string;
 }
 
+//Datamodels
+
+export interface vmAspNetUserModel extends SkylynxDataModel {
+  Id: string;
+  UserName: string;
+  NormalizedUserName: string;
+  Email: string;
+  NormalizedEmail: string;
+  EmailConfirmed: boolean;
+  PasswordHash?: string;
+  SecurityStamp?: string;
+  ConcurrencyStamp?: string;
+  PhoneNumber?: string;
+  PhoneNumberConfirmed: boolean;
+  TwoFactorEnabled: boolean;
+  LockoutEnd?: Date;
+  LockoutEnabled: boolean;
+  AccessFailedCount: number;
+}
+
+export interface vmAddressModel extends SkylynxDataModel {
+  AddyID: string;
+  Street1?: string;
+  Street2?: string;
+  City?: string;
+  State?: string;
+  PostalCode?: string;
+  Country?: string;
+  Latitude?: number;
+  Longitude?: number;
+}
+export interface vmProviderProfileValueModel extends SkylynxDataModel {
+  UserID: string;
+  ProviderID: string;
+  FieldID: string;
+  FieldValue: string;
+}
+
+
+export interface vmProviderProfileFieldModel extends SkylynxDataModel {
+  FieldID: string;
+  ProviderID: string;
+  FieldName: string;
+  FieldTypeID: string;
+  IsRequired: boolean;
+  SortOrder: number;
+}

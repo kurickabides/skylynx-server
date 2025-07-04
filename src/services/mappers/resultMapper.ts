@@ -7,13 +7,14 @@
 // Filename:resultMapper.ts
 // ================================================
 
-
 import {
-  DyFormField, DyFormSection,
   vmAspNetUserModel,
   vmAddressModel,
   vmProviderProfileFieldModel,
   vmProviderProfileValueModel,
+} from "../../entities/skylynx/types";
+import {
+  DyFormField, DyFormSection,
 } from "../../entities/dyform/types";
 
 export function mapUserProfileResults(recordsets: any[]): DyFormSection[] {
