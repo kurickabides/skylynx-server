@@ -36,4 +36,5 @@ export interface SkylynxUserProfile {
   BillingStateProvinceID?: string;
   CreatedAt?: string;
   UpdatedAt?: string;
+  ProviderFields?: UserProfileField[];
 }

@@ -29,6 +29,18 @@ const getUserById = async (userId: string) => {
   }
 };
 
+  // ✅ Fetch a user profile for a Portal
+  const getUserProfile = async (userId: string, portalName?: string) => {
+  const pool = await poolPromise;
+  const request = pool.request();
+
+  request.input("UserID", sql.NVarChar(128), userId);
+  request.input("PortalName", sql.NVarChar(100), portalName || null);
+
+  const result = await request.execute("GetUserProfileByUserID");
+  return result.recordset?.[0];
+};
+
 // ✅ Create a new user using stored procedure
 const createUser = async (
   username: string,
@@ -147,6 +159,7 @@ export default {
   getAllUsers,
   getUserById,
   createUser,
+  getUserProfile,
   assignUserRole,
   getUserRoles,
   validateUserByEmail,

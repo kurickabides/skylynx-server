@@ -4,20 +4,6 @@ import authMiddleware from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-// ✅ Test route with Admin authentication
-router.get(
-  "/roles/test/:id",
-  authMiddleware.authenticate,
-  authMiddleware.authorize("Admin"),
-  (req, res) => {
-    const { id } = req.params;
-    res.json({
-      message: "🔐 Auth passed. Admin access confirmed.",
-      userId: id,
-    });
-  }
-);
-
 // ✅ Get all users
 router.get(
   "/",
@@ -26,6 +12,13 @@ router.get(
   userController.getAll
 );
 
+// ✅ Get profile
+router.get(
+  "/profile",
+  authMiddleware.authenticate,
+  authMiddleware.authorize("USER"),
+  userController.getProfile
+);
 // ✅ Get user by ID
 router.get("/:id", authMiddleware.authenticate, authMiddleware.authorize("Admin"), userController.getById);
 
@@ -39,6 +32,8 @@ router.post(
   authMiddleware.authorize("Admin"),
   userController.assignRole
 );
+
+
 
 // ✅ Get roles for a user
 router.get("/roles/:id", authMiddleware.authenticate, userController.getRoles);

@@ -30,7 +30,7 @@ const signup = async (req: Request, res: Response) => {
     const hashedPassword = await hashPassword(password);
 
     const userId = await createUserSignUp(
-      "SkyLynxNet", // PortalName
+      "SkyLynxLIVE", // PortalName
       null, // ProviderName (optional)
       username,
       email,

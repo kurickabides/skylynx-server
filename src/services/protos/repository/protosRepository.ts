@@ -1,6 +1,6 @@
 // ================================================
 // ✅ Repository: protosRepository
-// Description: Fetches DyForm ViewModel Tree as SkylynxPortalConfig
+// Description: Fetches Protos Template Tree for a Portal
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
@@ -8,27 +8,27 @@
 // ================================================
 
 import { sql, poolPromise } from "../../../config/db";
-import { SkylynxPortalConfig } from "../../../entities/skylynx/types";
-import { mapPortalViewModelTree  } from "../../../services/mappers/skylynxPortalMapper"; // ✅ Use updated path
+import { PortalTemplateTree } from "../../../entities/protos/types";
+import { mapPortalTemplateTree } from "../../../services/mappers/skylynxPortalMapper";
 
 // ================================================
-// ✅ Function: getProtosTreeViewModelConfig
-// Description: Loads SkylynxPortalConfig by calling SkylynxPortalViewModelTree
+// ✅ Function: getSkylynxPortalTemplateTree
+// Description: Loads Protos Template Tree using PortalName
 // ================================================
-export async function getProtosTreeViewModelConfig(
-  viewModel: string
-): Promise<SkylynxPortalConfig> {
+export async function getSkylynxPortalTemplateTree(
+  portalName: string
+): Promise<PortalTemplateTree> {
   try {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input("ViewModelName", sql.NVarChar, viewModel)
-      .execute("LoadSkylynxPortalVMTree"); // ✅ Updated to match current SP
-    const recordsets = result.recordsets;
+      .input("PortalName", sql.NVarChar, portalName)
+      .execute("LoadSkylynxPortalTree");
 
-    return mapPortalViewModelTree(recordsets as any[][]);// ✅ Use new mapper
+    const recordset = result.recordset;
+    return mapPortalTemplateTree(recordset);
   } catch (error) {
-    console.error("❌ Failed to load SkylynxPortalConfig:", error);
+    console.error("❌ Failed to load SkylynxPortalTemplateTree:", error);
     throw error;
   }
 }

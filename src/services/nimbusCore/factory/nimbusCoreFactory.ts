@@ -7,81 +7,84 @@
 // Filename: nimbusCoreFactory.ts
 // ================================================
 
-import { getProtosTreeViewModelConfig } from "../../protos/repository/protosRepository";
-import { loadDyFormMetadata } from "../../dyform/repositories/dyformRepository";
+import { getSkylynxPortalTemplateTree } from "../../protos/repository/protosRepository";
+import { DyformRepository } from "../../dyform/repositories/dyformRepository";
+import { ResultMapper } from "../../mappers/resultMapper";
 
-import { runResolver } from "../../helpers/resolverExecutor";
-import { mapUserProfileResults } from "../../mappers/resultMapper";
-
+import { ViewModelParams } from "../../../entities/skylynx/types";
+import { DyFormViewModel } from "../../../entities/dyform/types";
 import {
-  ViewModelParams,
-  SkylynxPortalViewModel,
-  SkylynxPortalConfig,
-} from "../../../entities/skylynx/types";
-
-import {
-  DyFormViewModel,
-  DyFormSection,
-  DyFormField,
-} from "../../../entities/dyform/types";
-
+  SkylynxTemplateNode,
+  PortalTemplateTree,
+} from "../../../entities/protos/types";
 export class NimbusCoreFactory {
-  // 📦 Entry point to load full DyForm ViewModel (structure + values)
-  static async loadForm(
-    formVM: string,
-    view: string,
+  // 📦 Entry point to load full DyForm ViewModel (structure + values) from Portal Template Tree
+  static async loadFormFromPortal(
+    portalName: string,
     params: ViewModelParams
   ): Promise<DyFormViewModel> {
-    // 1️⃣ Load full ViewModel tree config
-    const portalTree: SkylynxPortalConfig = await getProtosTreeViewModelConfig(
-      formVM
+    const tree: PortalTemplateTree = await getSkylynxPortalTemplateTree(
+      portalName
     );
 
-    // 2️⃣ Get the active variant node
-    const targetView = portalTree.variants.find((v) => v.viewModel === view);
-    if (!targetView)
-      throw new Error(`ViewModel '${view}' not found in variants`);
+    const viewModelNode = findFirstDyFormVM(tree.children);
+    if (!viewModelNode)
+      throw new Error("No DyFormVM node found in portal tree");
 
-    // 3️⃣ Initialize the full ViewModel with context and structure
-    const fullViewModel: DyFormViewModel = {
-      viewModel: targetView.viewModel,
-      portalName: targetView.portalName,
-      moduleName: targetView.moduleName,
+    const formVersionID = viewModelNode.template.versionID;
+    const formName = viewModelNode.template.templateName;
+
+    const metadata = await DyformRepository.loadDyFormMetadata(formVersionID);
+
+    const formViewModel: DyFormViewModel = {
+      viewModel: formName,
+      portalName: tree.PortalName,
+      moduleName: "",
       context: {
-        formName: portalTree.viewModel,
-        template: targetView.template?.templateName || "",
-        version: String(targetView.template?.version || ""),
+        formName,
+        template: formName,
+        version: String(viewModelNode.template.version || ""),
         resolver: {
           method: "POST",
-          path: "/api/nimbus/loadForm",
+          path: "/api/nimbus/forms/loadform",
           type: "Internal",
         },
       },
-      sections: [],
+      sections: metadata.sections,
     };
 
-    // 4️⃣ Traverse through children ViewModels
-    const vmChildren = targetView.children || [];
-    for (const vm of vmChildren) {
-      const metadata = await loadDyFormMetadata(vm);
-      fullViewModel.sections.push(...metadata.sections);
+    if (viewModelNode.template?.resolver?.target) {
+      const rawResults = await DyformRepository.runResolver(
+        viewModelNode.template.resolver.resolverType,
+        viewModelNode.template.resolver.target,
+        params
+      );
+      const values = ResultMapper.mapFormData(metadata.sections, rawResults);
 
-      if (vm.template?.resolver?.target) {
-        const rawResults = await runResolver(vm.template.resolver, params);
-        const mapped = mapUserProfileResults(metadata.fields, rawResults);
-
-        // Set values on fields directly (flattened into section.fields)
-        for (const section of metadata.sections) {
-          for (const field of section.fields) {
-            const mappedValue = mapped[field.fieldId];
-            if (mappedValue !== undefined) {
-              field.value = mappedValue;
-            }
+      for (const section of formViewModel.sections) {
+        for (const field of section.fields) {
+          const value = values[field.fieldId];
+          if (value !== undefined) {
+            field.value = value;
           }
         }
       }
     }
 
-    return fullViewModel;
+    return formViewModel;
   }
+}
+
+function findFirstDyFormVM(
+  nodes?: SkylynxTemplateNode[]
+): SkylynxTemplateNode | undefined {
+  if (!nodes) return undefined;
+  for (const node of nodes) {
+    if (node.template.templateType.TargetTypeName === "DyFormVM") {
+      return node;
+    }
+    const found = findFirstDyFormVM(node.children);
+    if (found) return found;
+  }
+  return undefined;
 }

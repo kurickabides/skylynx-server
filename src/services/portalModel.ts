@@ -83,11 +83,25 @@ const deletePortal = async (portalId: string) => {
     throw error;
   }
 };
+const getPortalsByUserID = async (userID: string) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("UserID", sql.NVarChar(128), userID)
+      .execute("skylynxnet_coredb.dbo.GetPortalsByUserID");
 
+    return result.recordset;
+  } catch (error) {
+    console.error("❌ Error getting portals by user ID:", error);
+    throw error;
+  }
+};
 // ✅ PortalModel
 const PortalModel = {
   createPortal,
   getAllPortals,
+  getPortalsByUserID,
   getPortalById,
   updatePortal,
   deletePortal,

@@ -53,6 +53,22 @@ const getById = async (req: Request, res: Response) => {
   }
 };
 
+const getPortalsByUser = async (req: Request, res: Response) => {
+  try {
+
+    const { userID } = req.body;
+
+    if (!userID) {
+      return res.status(400).json({ error: "Missing userID in request body." });
+    }
+    const portals = await PortalModel.getPortalsByUserID(userID);
+    res.json({ portals });
+  } catch (err) {
+    console.error("Error in getPortalsByUser:", err);
+    res.status(500).json({ error: "Failed to retrieve portals." });
+  }
+};
+
 // ✅ Update a portal
 const update = async (req: Request, res: Response) => {
   try {
@@ -88,6 +104,7 @@ const portalController = {
   create,
   getAll,
   getById,
+  getPortalsByUser,
   update,
   remove,
 };

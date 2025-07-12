@@ -1,6 +1,6 @@
 // ================================================
-// ✅ Mapper: skylynxPortalMapper
-// Description: Maps SP result sets to SkylynxPortalConfig structure
+// ✅ Mapper: mapPortalTemplateTree
+// Description: Transforms flat portal tree rows into nested PortalTemplateTree
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
@@ -8,80 +8,80 @@
 // ================================================
 
 import {
-  SkylynxPortalConfig,
-  SkylynxPortalViewModel,
+  PortalTemplateTree,
+  TemplateType,
+  SkylynxTemplateNode,
   ProtosTemplate,
   IResolver,
-} from "../../entities/skylynx/types";
+} from "../../entities/protos/types";
 
-// ================================================
-// ✅ Function: mapResolverFields
-// Description: Extracts IResolver from SQL row
-// ================================================
-function mapResolverFields(record: any): IResolver {
-  return {
-    resolverId: record?.ResolverID ?? null,
-    resolverType: record?.ResolverType ?? null,
-    target: record?.Target ?? null,
-    description: record?.Description ?? null,
+// Helper: build a full ProtosTemplate from row
+function mapTemplate(row: any): ProtosTemplate {
+  const template: ProtosTemplate = {
+    templateID: row.ChildTemplateID,
+    templateName: row.ChildTemplateName,
+    templateType: {
+      targetTypeID: row.ChildTargetTypeID,
+      TargetTypeName: row.ChildTemplateType,
+    },
+    version: row.ChildVersionLabel + String(row.ChildVersionNumber),
+    versionID: row.ChildVersionID,
+    sortOrder: row.ChildSortOrder,
+    targetID: row.ChildObjectID,
   };
+
+  if (row.ResolverID) {
+    template.resolver = {
+      resolverId: row.ResolverID,
+      resolverType: row.ResolverType,
+      target: row.ResolverTarget,
+      description: row.ResolverDescription || undefined,
+    };
+  }
+
+  return template;
 }
 
-// ================================================
-// ✅ Function: mapTemplateMetadata
-// Description: Extracts ProtosTemplate metadata from row
-// ================================================
-function mapTemplateMetadata(record: any): ProtosTemplate {
-  return {
-    templateName: record?.TemplateName ?? null,
-    version: record?.version ?? null,
-    versionID: record?.versionID ?? null,
-    resolver: mapResolverFields(record),
-    sortOrder: record?.SortOrder ?? null,
-  };
-}
-
-// ================================================
-// ✅ Function: mapPortalViewModelTree
-// Description: Maps SQL result sets to SkylynxPortalConfig structure
-// ================================================
-export function mapPortalViewModelTree(
-  recordsets: any[][]
-): SkylynxPortalConfig {
-  const [rootSet, variantSet = [], dyformSet = []] = recordsets;
-  const root = rootSet?.[0];
-  if (!root) throw new Error("Missing root ViewModel result set");
-
-  const rootViewModel = root.ViewModel ?? root.viewModel;
-
-  const variants: SkylynxPortalViewModel[] = variantSet.map((variant) => {
-    const children = dyformSet
-      .filter(
-        (leaf) =>
-          leaf.ParentViewModel === variant.ViewModel ||
-          leaf.parentViewModel === variant.viewModel
-      )
-      .map((leaf) => ({
-        viewModel: leaf.ViewModel ?? leaf.viewModel,
-        moduleName: leaf.ModuleName ?? leaf.moduleName ?? "DynamicForms",
-        portalName: leaf.PortalName ?? leaf.portalName ?? "DyForm",
-        ...mapTemplateMetadata(leaf),
-      }));
-
+// Recursive builder
+function buildTree(flatRows: any[], parentId: string): SkylynxTemplateNode[] {
+  const children = flatRows.filter((r) => r.ParentTemplateID === parentId);
+  return children.map((row) => {
     return {
-      viewModel: variant.ViewModel ?? variant.viewModel,
-      moduleName: root.moduleName,
-      portalName: root.portalName,
-      ...mapTemplateMetadata(variant),
-      children: children.length ? children : undefined,
+      nodeName: row.ChildTemplateType,
+      template: mapTemplate(row),
+      children: buildTree(flatRows, row.ChildTemplateID),
     };
   });
+}
+
+// ================================================
+// ✅ Function: mapPortalTemplateTree
+// Description: Converts raw SP result to PortalTemplateTree
+// ================================================
+export function mapPortalTemplateTree(rows: any[]): PortalTemplateTree {
+  if (!rows.length) throw new Error("Empty tree result");
+
+  // Root row is always a Portal type
+  const rootRow = rows.find((r) => r.ParentTemplateType === "Portal");
+  if (!rootRow) throw new Error("Missing Portal root in result");
+
+  const PortalTemplate: ProtosTemplate = {
+    templateID: rootRow.ParentTemplateID,
+    templateName: rootRow.ParentTemplateName,
+    templateType: {
+      targetTypeID: rootRow.ParentTargetTypeID,
+      TargetTypeName: rootRow.ParentTemplateType,
+    },
+    version: rootRow.ParentVersionLabel + String(rootRow.ParentVersionNumber),
+    versionID: rootRow.ParentVersionID,
+    targetID: rootRow.ParentObjectID,
+  };
+
+  const children = buildTree(rows, PortalTemplate.templateID);
 
   return {
-    viewModel: root.ViewModel ?? root.viewModel,
-    moduleName: root.moduleName,
-    portalName: root.portalName,
-    ...mapTemplateMetadata(root),
-    variants,
+    PortalName: rootRow.ParentTemplateName,
+    PortalTemplate,
+    children,
   };
 }

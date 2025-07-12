@@ -7,21 +7,22 @@
 // Filename: portalModuleModel.ts
 // ================================================
 
-export interface Portal {
-  portalId: string;
+export interface IPortal {
+  portalID: string;
   portalName: string;
+  Description: string;
   createdAt?: Date;
-  updatedAt?: Date;
 }
 
-export interface PortalModuleModel {
-  moduleId: string;
+export interface IModule {
+  moduleID: string;
   moduleName: string; // e.g. "UserProfileManager"
-  description?: string;
-  isSystem?: boolean;
+  ModuleDescription?: string;
+  imageFilePath?: string;
+  ContentFilePath?: boolean;
   createdAt?: string;
-  updatedAt?: string;
 }
+
 export interface PortalPageModel {
   pageId: string;
   pageName: string; // e.g. "Account Settings"
@@ -62,7 +63,7 @@ export interface PortalPageViewModel {
   layout: PortalLayoutModel;
   modules: {
     region: string;
-    components: PortalModuleModel[];
+    components: PortalPageModel[];
   }[];
   navigation: PortalNavigationItem[];
 }

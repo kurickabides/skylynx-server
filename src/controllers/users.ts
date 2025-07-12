@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import userModel from "../services/userModel";
+import { AuthenticatedRequest } from "../middleware/types";
 
 const { getAllUsers, getUserById, createUser, assignUserRole, getUserRoles } =
   userModel;
@@ -17,7 +18,8 @@ const getAll = async (req: Request, res: Response) => {
 
 // ✅ Get a specific user by ID
 const getById = async (req: Request, res: Response) => {
-  try {
+   try {
+    console.log("🚀 Hit /users/:id route");
     const user = await getUserById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -65,6 +67,30 @@ const getRoles = async (req: Request, res: Response) => {
   }
 };
 
+// ✅ Get User Profile
+const getProfile = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log("Welcometo the Drug Show");
+    const userId = req.user?.id;
+    const portalName = req.portalName;
+
+    console.log("🧾 getProfile → userId:", userId);
+    console.log("🧾 getProfile → portalName:", portalName);
+
+    if (!userId || !portalName) {
+      return res
+        .status(400)
+        .json({ error: "Missing userId or portalName in request." });
+    }
+
+    const profile = await userModel.getUserProfile(userId, portalName);
+    res.json({ profile });
+  } catch (error) {
+    console.error("❌ Failed to fetch user profile:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 // ✅ Final export following your enforced module naming convention
 const userController = {
   getAll,
@@ -72,6 +98,7 @@ const userController = {
   create,
   assignRole,
   getRoles,
+  getProfile,
 };
 
 export default userController;

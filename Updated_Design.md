@@ -1597,136 +1597,196 @@ These will manage metadata used to configure forms, modules, and portals in a de
 ---
 
 Let me know when you're ready to implement or document these further — this structure will support everything you’ve been building with minimal refactor later.
- ## Skylynx Dynamic Form System Design Document
-
-### Overview
-The Skylynx platform uses a metadata-driven architecture to dynamically construct forms and resolve data from backend services. At the heart of this system lies the `NimbusCoreFactory`, responsible for interpreting `SkylynxPortalConfig` trees and assembling DyForm view models.
+ 
 
 ---
 
-### ☁️ Core Design Principles
+## 🔧 NimbusCoreFactory Design
 
-- **Metadata-Driven**: Forms and view models are not hardcoded, but instead defined through metadata records in SQL Server.
-- **Stored Procedure First**: All data resolution should occur via stored procedures defined in metadata.
-- **Dynamic Binding**: SP result sets are mapped to view models using DataModelDefinitions rather than manual mappings.
-- **Caching**: `SkylynxPortalConfig` trees are cached in-memory per portal to optimize performance.
+### Location
+- **Class:** `NimbusCoreFactory`
+- **Path:** `src/services/nimbus/nimbusCoreFactory.ts`
+- **Helper:** `MemoryCache` in `src/services/helpers/memoryCache.ts`
+
+### Purpose
+The `NimbusCoreFactory` is responsible for:
+- Resolving the **full DyForm ViewModel layout** for a given `formName` and `viewModel`
+- Loading static metadata and running resolvers defined in `ProtosTemplateLink`
+- Populating field values via dynamic result mapping
+
+### Flow Summary
+
+1. 🔁 **Portal Tree Lookup** (cached via `MemoryCache`)
+2. 🎯 **Match requested ViewModel**
+3. 🧱 **Initialize full ViewModel shell**
+4. 🧠 **Iterate child ViewModels**
+    - Load layout metadata via `DyformRepository.loadDyFormMetadata(viewModel)`
+    - If resolver exists:
+      - Call resolver using `DyformRepository.runResolver(...)`
+      - Map fields using `mapFormData(...)` into `SkylynxDataModelRecords`
+5. ✅ Return populated `DyFormViewModel`
+
+### Key Concepts
+
+- Caches `SkylynxPortalConfig` per `formName` using `MemoryCache`
+- Uses `ProtosDataModelDefinition` to define expected record shapes
+- Supports multiple `vm*Model` result mappings via field `sourceKey`/`sourcePath`
+- Extensible with new resolver types (e.g., HTTP, JSON)
 
 ---
 
-### 🧠 Key Components
+## ✅ Folder Structure Clarification
 
-| Component | Description |
-|----------|-------------|
-| `SkylynxPortalConfig` | Metadata tree of view models, templates, and resolver targets |
-| `DyFormViewModel` | JSON structure for client-side rendering of a form |
-| `ProtosTemplateLink` | Connects templates to resolvers and result data model definitions |
-| `ProtosDataModelDefinition` | Defines the expected structure of SP result sets |
-| `NimbusCoreFactory` | Orchestrates metadata loading, resolver execution, and value mapping |
+Please ensure your structure follows:
 
----
-
-### 🔁 NimbusCoreFactory Lifecycle
-
-```mermaid
-flowchart TD
-    Start([Start]) -->|Input: formName, viewName, params| Init["Create NimbusCoreFactory Instance"]
-    Init --> LoadTree["Load Cached SkylynxPortalConfig"]
-    LoadTree --> GetTarget["Find target ViewModel in variants"]
-    GetTarget --> InitVM["Initialize DyFormViewModel Shell"]
-    InitVM --> IterateChildren["Iterate Over Children ViewModels"]
-
-    IterateChildren -->|Each child VM| LoadMeta["Load DyForm Metadata"]
-    LoadMeta --> LoadResolver["Load Resolver + DataModelDefinition"]
-    LoadResolver --> RunSP["Run Stored Procedure"]
-    RunSP --> MapResult["Map ResultSets via ResultMapper"]
-    MapResult --> InjectValues["Inject Field Values into Form"]
-    InjectValues --> AppendSection["Append Sections to Main ViewModel"]
-    AppendSection --> CheckNext{"More Children?"}
-    CheckNext -->|Yes| IterateChildren
-    CheckNext -->|No| ReturnVM["Return Final DyFormViewModel"]
-    ReturnVM --> End([End])
+```
+src/
+├── controllers/
+├── dyform/
+├── entities/
+├── helpers/         ⬅ contains memoryCache.ts
+├── mappers/
+├── protos/
+├── routes/
+└── services/
+    └── nimbus/      ⬅ contains nimbusCoreFactory.ts
 ```
 
----
+Avoid putting `helpers/` or `services/` under `src/nimbus` — keep them flat under `src`.
+``` mermaid
+graph TD
+  Styles["🎨 Styles (LayoutRoot, FooterContainer)"]
+  StyleDefs["🧬 StyleDefinitions (theme-aware JSON)"]
+  StyleTgt["📍 StyleTargets (attach to layout/template)"]
+  Layout["📦 Layout Template"]
+  Theme["🎨 Theme Template (ThemeJSON)"]
 
-### 🔗 Result Mapping Process
+  Styles --> StyleDefs
+  StyleDefs --> StyleTgt
+  StyleTgt --> Layout
+  Layout --> Theme
+```
+# tree outline
+``` mermaid
+  graph TD
+    Portal["Portal Template: SkyLynxNet"]
+    Theme["Theme Template: CryoRIO"]
+    Layout["Layout Template: ShellLayout"]
+    Page["Page Template: UserProfilePage"]
+    Module["Module Template: ProfileModule"]
+    Form["Form Template: tmpUserProfileForm"]
 
-Each resolver in `ProtosTemplateLink` must also reference a `DataModelDefinitionID` that points to a JSON record in `ProtosDataModelDefinition`, like:
+    Portal --> Theme
+    Theme --> Layout
+    Layout --> Page
+    Page --> Module
+    Module --> Form
+```
+## Layout Design
 
-```json
-{
-  "aspNetUserModel": [],
-  "mailingAddressModel": [],
-  "billingAddressModel": [],
-  "providerProfileFieldModel": [],
-  "providerProfileValueModel": []
-}
+``` mermaid
+graph TD
+    tplLayout["ProtosTemplate (TemplateType: Layout)"]
+    layoutRec["Layouts LayoutName = ShellLayout"]
+    reactLayout["<ShellLayout /> component"]
+
+    tplLayout -->|"TargetObjectID"| layoutRec
+    layoutRec -->|"layoutName + flags"| reactLayout
 ```
 
-This record is parsed and passed into `ResultMapper.mapFormData()` to strongly bind dynamic SP results to structured keys expected by the UI.
+### Example TemplateTree
 
----
+``` mermaid
+graph TD
+  Portal["Portal Template: SkyLynxNet"]
+  Theme["Theme Template: CryoRIO"]
+  Layout["Layout Template: ShellLayout"]
+  Page["Page Template: UserProfilePage"]
+  Module["Module Template: tmpProfileManagement"]
+  Form["Form Template: tmpUserProfileForm"]
+  View["ViewModel Template: tmpUserProfileView"]
+  Edit["ViewModel Template: tmpUserProfileEdit"]
+  DataModel["DataModel Template: tmpUserProfileDM"]
 
-### 🧩 ResultMapper Pattern
-
-```ts
-mapFormData(
-  recordsets: unknown[],
-  dataModelDefinition: Record<string, string>
-): SkylynxDataModelRecords
+  Portal --> Theme
+  Theme --> Layout
+  Layout --> Page
+  Page --> Module
+  Module --> DataModel
+  DataModel --> Form
+  Form --> Edit
+  Form --> View
 ```
 
-Returns a generic object like:
+## Theme Template Chain
+``` mermaid
 
-```ts
-{
-  aspNetUserModel: [{ ... }],
-  billingAddressModel: [{ ... }],
-  ...
-}
+graph TD
+  T[tplSkylynxRoot (TemplateType: Layout)]
+  T -->|Child| TH[tplSkylynxDark (TemplateType: Theme)]
+  TH -->|Has| V[ThemeJSON v1.0]
+
 ```
 
----
+## futur outline for styles maybe
+✅ Tables to Finalize Now
+1. Themes
+sql
+Copy
+Edit
 
-### ✅ Next Implementation Steps
+``` sql
+CREATE TABLE Themes (
+  ThemeID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  ThemeName NVARCHAR(100) NOT NULL UNIQUE,
+  Description NVARCHAR(255),
+  ThemeJSON NVARCHAR(MAX) NOT NULL,
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE()
+);
 
-1. Create repository method: `getDataModelDefinitionByID(id)`
-2. Refactor factory to use this JSON definition instead of inline `fields`
-3. Update cache logic to ensure definitions are reused per portal
-4. Finish logging and error handling for debug clarity
+2. StyleDefinitions
+sql
+Copy
+Edit
+CREATE TABLE StyleDefinitions (
+  StyleID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  StyleName NVARCHAR(100) NOT NULL,
+  Description NVARCHAR(255),
+  StyleJSON NVARCHAR(MAX) NOT NULL,
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE()
+);
 
----
+3. StyleTargets
+sql
+Copy
+Edit
+CREATE TABLE StyleTargets (
+  StyleTargetID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  StyleID UNIQUEIDENTIFIER NOT NULL,
+  TargetTypeID UNIQUEIDENTIFIER NOT NULL, -- from ProtosTargetType
+  TargetObjectID UNIQUEIDENTIFIER NOT NULL, -- LayoutID, ModuleID, etc.
+  SortOrder INT DEFAULT 0,
+  ResolverID UNIQUEIDENTIFIER NULL, -- optional dynamic use
+  IsActive BIT DEFAULT 1,
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE(),
 
-### 📦 Output Example: DyFormViewModel
+  CONSTRAINT FK_StyleTargets_Style FOREIGN KEY (StyleID) REFERENCES StyleDefinitions(StyleID),
+  CONSTRAINT FK_StyleTargets_Resolver FOREIGN KEY (ResolverID) REFERENCES Resolvers(ResolverID),
+  CONSTRAINT FK_StyleTargets_TargetType FOREIGN KEY (TargetTypeID) REFERENCES ProtosTargetType(TargetTypeID)
+);
+4. StyleTypes (optional — for grouping)
+sql
+Copy
+Edit
+CREATE TABLE StyleTypes (
+  StyleTypeID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  StyleTypeName NVARCHAR(100) NOT NULL UNIQUE,
+  Description NVARCHAR(255)
+);
 
-```json
-{
-  "viewModel": "UserProfile_View",
-  "portalName": "Skylynx",
-  "moduleName": "UserManagement",
-  "context": {
-    "formName": "UserProfile",
-    "template": "BaseUserTemplate",
-    "version": "1.0"
-  },
-  "sections": [
-    {
-      "name": "User Info",
-      "label": "Personal Details",
-      "fields": [ ... ]
-    },
-    ...
-  ]
-}
 ```
 
----
-
-### ✍️ Notes
-- This update supports better decoupling of logic and more robust dynamic mapping.
-- Forms can now evolve independently from their SPs.
-- This approach is essential for multi-portal, multi-tenant systems.
-
----
-
-_Last updated: 2025-07-05_
+You can skip this for now unless you want to group styles later.

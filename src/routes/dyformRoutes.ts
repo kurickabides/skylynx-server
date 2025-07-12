@@ -8,7 +8,7 @@
 // ================================================
 
 import express from "express";
-import { getDyFormViewModel } from "../controllers/dyformController";
+import { getDyFormViewModel } from "../controllers/dyform";
 
 const router = express.Router();
 

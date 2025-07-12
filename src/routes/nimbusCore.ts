@@ -1,17 +1,23 @@
 // ================================================
 // ✅ File: routes/nimbusRoutes.ts
-// Description: Express routes for NimbusCore form loading
+// Description: Express routes for NimbusCore template & form loading
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
 // ================================================
 
 import express from "express";
-import { loadFormHandler } from "../controllers/nimbusCore";
+import {
+  loadFormHandler,
+  loadPortalTemplateTreeHandler,
+} from "../controllers/nimbusCore";
 
 const router = express.Router();
 
-// POST /api/nimbus/loadform
+// POST /api/nimbus/forms/loadform
 router.post("/forms/loadform", loadFormHandler);
+
+// GET /api/nimbus/templates/portals
+router.get("/templates/portals", loadPortalTemplateTreeHandler);
 
 export default router;

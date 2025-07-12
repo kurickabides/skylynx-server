@@ -1,6 +1,6 @@
 // ================================================
-// ✅ Mapper: resultMapper
-// Description: Converts raw resultsets from SP into DyForm sections
+// ✅ Class: ResultMapper
+// Description: Converts raw resultsets from SP into DyForm ViewModel objects
 // Author: NimbusCore.OpenAI
 // Architect: Chad Martin
 // Company: CryoRio
@@ -12,81 +12,47 @@ import {
   vmAddressModel,
   vmProviderProfileFieldModel,
   vmProviderProfileValueModel,
+  SkylynxDataModelRecords,
 } from "../../entities/skylynx/types";
-import {
-  DyFormField, DyFormSection,
-} from "../../entities/dyform/types";
 
-export function mapUserProfileResults(recordsets: any[]): DyFormSection[] {
-  const sections: DyFormSection[] = [];
+import { DyFormField, DyFormSection } from "../../entities/dyform/types";
 
-  const userInfo: vmAspNetUserModel = recordsets[0]?.[0] || {};
-  const mailing: vmAddressModel = recordsets[1]?.[0] || {};
-  const billing: vmAddressModel = recordsets[2]?.[0] || {};
-  const profileFields: vmProviderProfileFieldModel[] = recordsets[3] || [];
-  const profileValues: vmProviderProfileValueModel[] = recordsets[4] || [];
+export class ResultMapper {
+  /**
+   * ✅ Generic DyForm mapping using SkylynxDataModelRecords model as the base interface
+   */
+  static mapFormData(
+    recordsets: any[],
+    dataModelDefinition: Record<keyof SkylynxDataModelRecords, string>
+  ): SkylynxDataModelRecords {
+    const model = {} as SkylynxDataModelRecords;
+    const keys = Object.keys(dataModelDefinition) as Array<
+      keyof SkylynxDataModelRecords
+    >;
 
-  // Section 1: User Info
-  const userFields: DyFormField[] = Object.entries(userInfo).map(
-    ([key, value]) => ({
-      fieldId: key,
-      label: key,
-      value,
-      type: "TextInput",
-    })
-  );
+    keys.forEach((key, index) => {
+      model[key] = recordsets[index] as SkylynxDataModelRecords[typeof key];
+    });
 
-  sections.push({
-    name: "User Info",
-    fields: userFields,
-  });
+    return model;
+  }
 
-  // Section 2: Mailing Address
-  const mailingFields: DyFormField[] = Object.entries(mailing).map(
-    ([key, value]) => ({
-      fieldId: key,
-      label: key,
-      value,
-      type: "TextInput",
-    })
-  );
-
-  sections.push({
-    name: "Mailing Address",
-    fields: mailingFields,
-  });
-
-  // Section 3: Billing Address
-  const billingFields: DyFormField[] = Object.entries(billing).map(
-    ([key, value]) => ({
-      fieldId: key,
-      label: key,
-      value,
-      type: "TextInput",
-    })
-  );
-
-  sections.push({
-    name: "Billing Address",
-    fields: billingFields,
-  });
-
-  // Section 4: Dynamic Profile Fields
-  const dynamicFields: DyFormField[] = profileFields.map((def) => {
-    const valueObj = profileValues.find((v) => v.FieldID === def.FieldID);
+  /**
+   * (Optional legacy) Map user profile resolver recordsets to known structure
+   */
+  static mapUserProfileResults(recordsets: unknown[]): {
+    aspNetUserModel: vmAspNetUserModel[];
+    mailingAddressModel: vmAddressModel[];
+    billingAddressModel: vmAddressModel[];
+    providerProfileFieldModel: vmProviderProfileFieldModel[];
+    providerProfileValueModel: vmProviderProfileValueModel[];
+  } {
     return {
-      fieldId: def.FieldID,
-      label: def.FieldName,
-      value: valueObj?.FieldValue || "",
-      type: "TextInput",
-      required: def.IsRequired,
+      aspNetUserModel: recordsets[0] as vmAspNetUserModel[],
+      mailingAddressModel: recordsets[1] as vmAddressModel[],
+      billingAddressModel: recordsets[2] as vmAddressModel[],
+      providerProfileFieldModel: recordsets[3] as vmProviderProfileFieldModel[],
+      providerProfileValueModel: recordsets[4] as vmProviderProfileValueModel[],
     };
-  });
-
-  sections.push({
-    name: "Dynamic Profile Fields",
-    fields: dynamicFields,
-  });
-
-  return sections;
+  }
 }

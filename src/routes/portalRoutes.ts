@@ -19,4 +19,6 @@ router.put("/:id", authMiddleware.authenticate, portalController.update);
 // ✅ Delete portal
 router.delete("/:id", authMiddleware.authenticate, portalController.remove);
 
+router.post("/byuser",portalController.getPortalsByUser);
+
 export default router;

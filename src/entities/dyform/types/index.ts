@@ -9,6 +9,7 @@
 
 import { SkylynxDataModel, IKeyValuePair } from "../../skylynx/types";
 
+
 // ================================================
 // ✅ Interface: LoadPortalFormRequest
 // Description: Load request payload for dynamic form ViewModel
@@ -25,6 +26,7 @@ export enum ViewModelName {
   vmUserProfile_Edit = "vmUserProfile_Edit",
   vmPortalAdmin_View = "vmPortalAdmin_View",
 }
+
 
 export enum ViewNames {
   view = "View",
@@ -64,6 +66,7 @@ export interface DyFormFieldType {
 }
 
 export interface DyFormSection {
+  sectionId: string;
   name: string;
   label?: string;
   sortOrder?: number;
@@ -95,12 +98,7 @@ export interface DyFormRule {
 
 export interface DyFormDomain {
   name: string;
-  options: DyFormDomainOption[];
-}
-
-export interface DyFormDomainOption {
-  key: string;
-  value: string;
+  options: IKeyValuePair[];
 }
 
 export interface DyFormResolver {

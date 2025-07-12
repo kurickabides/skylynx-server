@@ -7,32 +7,24 @@
 // Filename:/entities/skylynx/types/index.ts
 // ================================================
 import { DyFormSections } from "../../dyform/types";
+import { IPortal, IModule } from "../../portal/types";
+import {
+   ProtosTemplate,
+  TemplateRelationship,
+  SkylynxTemplateNode,
+} from "../../protos/types";
 
-export interface IResolver {
-  resolverId: string;
-  resolverType: string; // from ResolverType table
-  target: string;
-  description?: string;
-}
-export interface ProtosTemplate {
-  templateName?: string;
-  version?: number | string;
-  versionID?: string; // TemplateVersionID
-  resolver?: IResolver;
-  sortOrder?: number;
-}
 
-// ================================================
-// ✅ Interface: SkylynxPortalViewModel
-// Description: Represents a ViewModel node in the config tree
-// ================================================
 export interface SkylynxPortalViewModel {
-  viewModel: string;
   portalName: string;
   moduleName: string;
-  template?: ProtosTemplate;
   children?: SkylynxPortalViewModel[];
 }
+
+export type SkylynxDataModelRecords = Record<
+  string,
+  SkylynxDataModel | SkylynxDataModel[]
+>;
 
 // ================================================
 // ✅ Interface: SkylynxPortalResponse
@@ -42,30 +34,31 @@ export interface SkylynxPortalViewModel {
 // Company: CryoRio
 // Filename:skylynxPortalResponse.ts
 // ================================================
-
+// Template config used to resolve and render this form
+// Fully resolved section + field structure (including nested sections)
+// Keyed by ViewModelName, with each record holding data for that view
 export interface SkylynxPortalResponse {
   viewModel: string;
   portalName: string;
-  moduleName: string;
-
-  // Template config used to resolve and render this form
-  template?: ProtosTemplate;
-
-  // Fully resolved section + field structure (including nested sections)
-  sections: DyFormSections[];
-
-  // Keyed by ViewModelName, with each record holding data for that view
-  data: Record<string, SkylynxDataModel | SkylynxDataModel[]>;
+  moduleName: string;  
+  template?: ProtosTemplate; 
+  sections: DyFormSections[];  
+  data: SkylynxDataModelRecords;
 }
 
-
+// ✅ Interface: SkylynxPortalCache
+// Description: Root-level ViewModel structure with variants
 // ================================================
+export type SkylynxPortalCache = Record<string, SkylynxPortalConfig>;
+
 // ✅ Interface: SkylynxPortalConfig
 // Description: Root-level ViewModel structure with variants
 // ================================================
-export interface SkylynxPortalConfig extends SkylynxPortalViewModel {
-  variants: SkylynxPortalViewModel[];
+export interface SkylynxPortalConfig extends SkylynxTemplateNode {
+  portal: IPortal;
+  variants: SkylynxTemplateNode[];
 }
+
 
 export interface SkylynxDataModel {
   createdAt?: Date;
@@ -85,6 +78,14 @@ export interface SkylynxPortalVariantContext {
 }
 
 //Datamodels
+
+export interface SkylynxUserProfile {
+  aspNetUserModel: vmAspNetUserModel;
+  mailingAddressModel: vmAddressModel;
+  billingAddressModel: vmAddressModel;
+  providerProfileFieldModel: vmProviderProfileFieldModel;
+  providerProfileValueModel: vmProviderProfileValueModel;
+}
 
 export interface vmAspNetUserModel extends SkylynxDataModel {
   Id: string;
