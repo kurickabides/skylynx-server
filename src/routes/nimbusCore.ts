@@ -10,6 +10,7 @@ import express from "express";
 import {
   loadFormHandler,
   loadPortalTemplateTreeHandler,
+  getAllProtosTargetTypesHandler,
 } from "../controllers/nimbusCore";
 
 const router = express.Router();
@@ -19,5 +20,7 @@ router.post("/forms/loadform", loadFormHandler);
 
 // GET /api/nimbus/templates/portals
 router.get("/templates/portals", loadPortalTemplateTreeHandler);
+
+router.get("/templates/types", getAllProtosTargetTypesHandler);
 
 export default router;

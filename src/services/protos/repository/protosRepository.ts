@@ -8,7 +8,10 @@
 // ================================================
 
 import { sql, poolPromise } from "../../../config/db";
-import { PortalTemplateTree } from "../../../entities/protos/types";
+import {
+  PortalTemplateTree,
+  TemplateType,
+} from "../../../entities/protos/types";
 import { mapPortalTemplateTree } from "../../../services/mappers/skylynxPortalMapper";
 
 // ================================================
@@ -29,6 +32,23 @@ export async function getSkylynxPortalTemplateTree(
     return mapPortalTemplateTree(recordset);
   } catch (error) {
     console.error("❌ Failed to load SkylynxPortalTemplateTree:", error);
+    throw error;
+  }
+}
+// ================================================
+// ✅ Function: getAllProtosTargetTypes
+// Description: Loads all records from ProtosTargetType table
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// ================================================
+export async function getAllProtosTargetTypes(): Promise<TemplateType[]> {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().execute("GetAllProtosTargetType");
+    return result.recordset;
+  } catch (error) {
+    console.error("❌ Failed to load ProtosTargetTypes:", error);
     throw error;
   }
 }

@@ -8,7 +8,10 @@
 // ================================================
 
 import { Request, Response } from "express";
-import { getSkylynxPortalTemplateTree } from "../services/protos/repository/protosRepository";
+import {
+  getSkylynxPortalTemplateTree,
+  getAllProtosTargetTypes,
+} from "../services/protos/repository/protosRepository";
 import { mapRequestToParams } from "../services/mappers/paramMapper";
 import { LoadPortalFormRequest } from "../entities/dyform/types";
 import { NimbusCoreFactory } from "../services/nimbusCore/factory/nimbusCoreFactory";
@@ -56,5 +59,18 @@ export const loadPortalTemplateTreeHandler = async (
   } catch (err) {
     console.error("❌ loadPortalTemplateTreeHandler Error:", err);
     res.status(500).json({ error: "Failed to load portal template tree." });
+  }
+};
+
+export const getAllProtosTargetTypesHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const targetTypes = await getAllProtosTargetTypes();
+    res.json(targetTypes);
+  } catch (err) {
+    console.error("❌ getAllProtosTargetTypesHandler Error:", err);
+    res.status(500).json({ error: "Failed to load target types." });
   }
 };
