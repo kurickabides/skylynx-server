@@ -65,6 +65,7 @@ export interface SkylynxDataModel {
   updatedAt?: Date;
   status?: string; // Optional status message or state (e.g., 'active', 'error', etc.)
 }
+
 export type ViewModelParams = {
   [paramName: string]: string | number | boolean | null;
 };

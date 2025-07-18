@@ -11,8 +11,10 @@ import {
   loadFormHandler,
   loadPortalTemplateTreeHandler,
   getAllProtosTargetTypesHandler,
+  getTargetByIdHandler,
 } from "../controllers/nimbusCore";
-
+import authMiddleware from "../middleware/authMiddleware";
+//this should just use apiKey for auth uless admin is needed then use authMiddleware
 const router = express.Router();
 
 // POST /api/nimbus/forms/loadform
@@ -22,5 +24,10 @@ router.post("/forms/loadform", loadFormHandler);
 router.get("/templates/portals", loadPortalTemplateTreeHandler);
 
 router.get("/templates/types", getAllProtosTargetTypesHandler);
+
+//TemplatesTargets Route 
+// ✅ Dynamic Target Resolver Route
+router.get("/templates/targets/:type/:id", getTargetByIdHandler);
+
 
 export default router;

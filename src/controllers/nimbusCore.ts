@@ -11,7 +11,15 @@ import { Request, Response } from "express";
 import {
   getSkylynxPortalTemplateTree,
   getAllProtosTargetTypes,
+  getLayoutById,
+  getPageById,
+  getModuleById,
+  getDataModelById,
+  getDyFormById,
+  getDyFormVMById,
+  getThemeById,
 } from "../services/protos/repository/protosRepository";
+import PortalModel  from "../services/portalModel";
 import { mapRequestToParams } from "../services/mappers/paramMapper";
 import { LoadPortalFormRequest } from "../entities/dyform/types";
 import { NimbusCoreFactory } from "../services/nimbusCore/factory/nimbusCoreFactory";
@@ -61,7 +69,6 @@ export const loadPortalTemplateTreeHandler = async (
     res.status(500).json({ error: "Failed to load portal template tree." });
   }
 };
-
 export const getAllProtosTargetTypesHandler = async (
   req: Request,
   res: Response
@@ -74,3 +81,39 @@ export const getAllProtosTargetTypesHandler = async (
     res.status(500).json({ error: "Failed to load target types." });
   }
 };
+
+// ✅ Generic handler for any target by type + id
+export const getTargetByIdHandler = async (req: Request, res: Response) => {
+  try {
+    const { type, id } = req.params;
+
+    switch (type.toLowerCase()) {
+      case "portal":
+        return res.json(await PortalModel.getPortalById(id));
+      case "layout":
+        return res.json(await getLayoutById(id));
+      case "page":
+        return res.json(await getPageById(id));
+      case "module":
+        return res.json(await getModuleById(id));
+      case "datamodel":
+        return res.json(await getDataModelById(id));
+      case "dyform":
+        return res.json(await getDyFormById(id));
+      case "viewmodel":
+        return res.json(await getDyFormVMById(id));
+      case "dyformvm":
+        return res.json(await getDyFormVMById(id));
+      case "theme":
+        return res.json(await getThemeById(id));
+      case "themecolors":
+        return res.json(await getThemeById(id));
+      default:
+        return res.status(400).json({ error: `Unsupported type: ${type}` });
+    }
+  } catch (err) {
+    console.error(`❌ getTargetByIdHandler Error:`, err);
+    res.status(500).json({ error: `Failed to load target for type ${req.params.type}` });
+  }
+};
+
