@@ -20,7 +20,7 @@ const authenticateAPI = async (
     const keyResult = await pool
       .request()
       .input("ApiKeyID", sql.NVarChar(256), rawApiKey).query(`
-        SELECT KeyHash, PortalName 
+        SELECT KeyHash, PortalName,PortalID
         FROM vw_ActiveAPIKeys 
         WHERE ApiKeyID = @ApiKeyID
       `);
@@ -32,7 +32,7 @@ const authenticateAPI = async (
       return res.status(403).json({ error: "Invalid API key" });
     }
 
-    const { KeyHash, PortalName } = keyRecord;
+    const { KeyHash, PortalName, PortalID } = keyRecord;
 
     // 🔐 Step 2: Validate via SP
     const validateResult = await pool
@@ -45,8 +45,12 @@ const authenticateAPI = async (
       return res.status(403).json({ error: "API key validation failed" });
     }
 
-    console.log("✅ API key authenticated:", PortalName);
+    (req as any).apiKey = rawApiKey;
     (req as any).portalName = PortalName;
+    (req as any).portalId = PortalID;
+   console.log(
+     `✅ API key authenticated: Key=${rawApiKey} | PortalName=${PortalName} | PortalID=${PortalID}`
+   );
     next();
   } catch (error: any) {
     console.error("❌ API Key Auth Error:", error.message || error);

@@ -1719,8 +1719,271 @@ Returns a generic object like:
   ]
 }
 ```
+---
+# Payements schema
+We want a clean relational model with real FK integrity, not stringy blobs. The pattern you’re reaching for is:
+
+DDD Bounded Context + Aggregate Root (PaymentIntent)
+
+Transaction Log (append-only PaymentTxn)
+
+Outbox/Event Log (PaymentWebhook)
+
+Associative Target Link (so we don’t do polymorphic columns in the core table)
+
+Below is a tight, normalized Payments schema that “lives in the Payments module,” with a clean target relationship to whatever domain object (forms, orders, subscriptions) without polluting Protos.
+
+## ERD — Payments
+```mermaid
+erDiagram
+  Payments_Provider ||--o{ Payments_ProviderSecret : has
+  Payments_Provider ||--o{ Payments_Intent : serves
+  Payments_Intent ||--o{ Payments_Txn : records
+  Payments_Intent ||--o{ Payments_TargetLink : links
+  Payments_Webhook {
+    uniqueidentifier WebhookID PK
+    nvarchar(200) EventID
+    nvarchar(100) EventType
+    nvarchar(max) RawJson
+    datetime2 ProcessedAt
+  }
+  Payments_Provider {
+    uniqueidentifier ProviderID PK
+    nvarchar(100) Name
+    nvarchar(50)  Type
+    bit           IsActive
+    bit           IsSandbox
+    datetime2     CreatedAt
+    datetime2     UpdatedAt
+  }
+  Payments_ProviderSecret {
+    uniqueidentifier ProviderID PK, FK
+    nvarchar(200) ApiLoginID_enc
+    nvarchar(400) TransactionKey_enc
+    nvarchar(400) SignatureKeyHex_enc
+    nvarchar(20)  Mode
+    datetime2     UpdatedAt
+  }
+  Payments_Intent {
+    uniqueidentifier PaymentIntentID PK
+    uniqueidentifier ProviderID FK
+    uniqueidentifier PortalID
+    uniqueidentifier UserID
+    decimal(18)  Amount
+    char(3)        Currency
+    nvarchar(20)   Status
+    nvarchar(100)  ClientRef
+    datetime2      CreatedAt
+    datetime2      UpdatedAt
+  }
+  Payments_TargetLink {
+    uniqueidentifier PaymentIntentID FK
+    nvarchar(50)    TargetDomain
+    uniqueidentifier TargetID
+  }
+  Payments_Txn {
+    uniqueidentifier PaymentTxnID PK
+    uniqueidentifier PaymentIntentID FK
+    nvarchar(20)     TxnType
+    nvarchar(100)    GatewayTxnID
+    nvarchar(50)     AuthCode
+    nvarchar(50)     ResultCode
+    nvarchar(max)    RawJson
+    datetime2        CreatedAt
+  }
+  
+
+```
+---
+## State machine — PaymentIntent lifecycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> Pending
+  Pending --> Authorized: AuthOnly
+  Pending --> Captured: AuthCapture (hosted page)
+  Pending --> Failed: Gateway decline / error
+  Authorized --> Captured: Capture
+  Authorized --> Voided: Void
+  Captured --> Refunded: Refund
+  Failed --> [*]
+  Voided --> [*]
+  Refunded --> [*]
+```
+---
+## Sequence — Payments Tables Schema
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant UI as Your App UI
+  participant API as Express API (/api/payments)
+  participant DB as SQL (Payments.* SPs)
+
+  UI->>API: POST createIntent({ amount, portalId, userId, clientRef })
+  API->>DB: Payments.CreateIntent (Status=Pending)
+  DB-->>API: PaymentIntentID
+  API-->>UI: { paymentIntentId, status: Pending }
+
+  Note over UI,API: Later, a provider will produce a Token + a hosted form…
+```
+---
+
+## Authorize.Net SDK (server + gateway)
+> We wrap the SDK behind a PaymentProvider facade so SkyLynx only talks to typed interfaces. Internally we use the Authorize.Net REST (or SDK) to:
+
+>Create Hosted Payment Token (getHostedPaymentPageRequest)
+
+>Receive Webhooks (HMAC check with Signature Key)
+
+>Map events back to Payments.Intent and append Payments.Txn
+
+### Component view — how it fits on the server
+```mermaid
+flowchart LR
+  subgraph NGINX [NGINX HTTPS]
+    direction LR
+    C[Client Browser]
+  end
+
+  subgraph Express [Express API Node]
+    direction TB
+    R1[/routes/paymentRoutes.ts/]
+    MW[authenticateAPI + logger]
+    Prov[AuthorizeNetProvider facade]
+    SPs[Payments.* SPs]
+  end
+
+  subgraph SQL [SQL Server]
+    DB[Payments schema]
+  end
+
+  subgraph ANet [Authorize.Net]
+    HPP[Hosted Payment Page]
+    API[REST / SDK]
+    WH[Webhook]
+  end
+
+  C -- https --> NGINX -- http --> R1
+  R1 --> MW --> Prov
+  Prov --> SPs --> DB
+  Prov <--> API
+  C <-- iframe token --> HPP
+  WH -- HMAC --> R1
+  R1 --> Prov --> SPs --> DB
+```
+---
+### End-to-end flow with Authorize.Net (hosted page)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant UI as Frontend Module
+  participant API as Express /api/payments
+  participant SP as SQL (Payments SPs)
+  participant AN as Authorize.Net (API + Hosted Page)
+
+  UI->>API: POST /authorizeNet/create-hosted-payment {providerId, portalId, userId, amount}
+  API->>SP: Payments.CreateIntent(Status=Pending)
+  SP-->>API: PaymentIntentID
+  API->>SP: Payments.GetProviderSecret(ProviderID)
+  SP-->>API: {ApiLoginID, TransactionKey, SignatureKeyHex, IsSandbox}
+  API->>AN: getHostedPaymentPageRequest (authCaptureTransaction, amount)
+  AN-->>API: token
+  API->>SP: Payments.LogTxn(TxnType=AuthCapture, ResultCode=TokenIssued, RawJson)
+  API-->>UI: { paymentIntentId, token, iframeUrl, mode }
+
+  UI->>AN: Load iframe with token (Hosted Payment Page)
+  AN-->>UI: Card entry UX + submit
+
+  AN-->>API: Webhook (authcapture.created / responseCode=1)
+  API->>API: Verify HMAC (Signature Key)
+  API->>SP: Payments.UpsertWebhook(...)
+  API->>SP: Payments.ResolveIntentByGatewayTxnID(transId)
+  SP-->>API: PaymentIntentID
+  API->>SP: Payments.UpdateIntentStatus(Captured)
+  API->>SP: Payments.LogTxn(TxnType=AuthCapture, GatewayTxnID, AuthCode, ResultCode, RawJson)
+  API-->>AN: 200 OK
+
+  UI->>API: GET /authorizeNet/intent/:id/status (poll)
+  API->>SP: Payments.GetIntentStatusById
+  SP-->>API: {Status=Captured}
+  API-->>UI: {Captured}
+
+```
+### Why this is rational & future-proof (quick spar)
+
+Tight relational core (Intent/Txn/Webhook/TargetLink) → clean FKs, auditability, refunds/voids later without redesign.
+
+Provider abstraction → Authorize.Net today, Stripe tomorrow, no ripple into domain code.
+
+PCI-minimized → hosted page + HMAC webhooks; store only IDs/last4/brand; secrets in ProviderSecret.
+
+Form-agnostic → link to DyForm submissions only when needed via TargetLink; Payments stands alone.
+
+### Payyments Seedindg Process
+
+```mermaid
+flowchart TD
+    subgraph Protos Layer
+    Tmpl[ProtosTemplate]
+    TmplVer[ProtosTemplateVersion]
+    TmplLink[ProtosTemplateLink]
+    end
+
+    subgraph Portal Layer
+    Mod[Modules]
+    Page[PageDefinition]
+    PPM[PortalPageModules]
+    end
+
+    subgraph Payments Layer
+    Prov[Payments.Provider]
+    Secret[Payments.ProviderSecret]
+    Intent[Payments.Intent]
+    TLink[Payments.TargetLink]
+    Txn[Payments.Txn]
+    Webhook[Payments.Webhook]
+    end
+
+    Tmpl --> TmplVer --> TmplLink
+    Mod --> PPM
+    Page --> PPM
+    PPM --> TmplLink
+
+    Prov --> Secret
+    Prov --> Intent
+    Intent --> TLink
+    Intent --> Txn
+    Webhook --> Intent
+
+```
+## Overview: “Webhook Journey"
+
+``` mermaid
+sequenceDiagram
+    participant ANet as Authorize.Net
+    participant NGINX as NGINX (HTTPS terminator)
+    participant Express as Skylynx API (payments route)
+    participant Provider as AuthorizeNetProvider
+    participant DB as SQL Server (Payments schema)
+
+    ANet->>NGINX: HTTPS POST /api/payments/webhook
+    NGINX->>Express: Forward request body and signature header
+    Express->>Provider: call processWebhook(rawBody, signatureHeader)
+    Provider->>Provider: verify signature (HMAC-SHA512)
+    Provider->>DB: EXEC Payments.UpsertWebhook(...)
+    Provider->>DB: EXEC Payments.ResolveIntentByGatewayTxnID(...)
+    Provider->>DB: EXEC Payments.UpdateIntentStatus(...)
+    Provider->>DB: (optional) EXEC Payments.RecordTxn(...)
+    Provider-->>Express: { ok: true }
+    Express-->>NGINX: 200 OK
+    NGINX-->>ANet: 200 OK (stops retries)
+
+```
 
 ---
+
 
 ### ✍️ Notes
 - This update supports better decoupling of logic and more robust dynamic mapping.
@@ -1728,5 +1991,7 @@ Returns a generic object like:
 - This approach is essential for multi-portal, multi-tenant systems.
 
 ---
+Protos layer (a minimal ProtosTemplate + ProtosTemplateVersion + ProtosTemplateLink)
+
 
 _Last updated: 2025-07-05_

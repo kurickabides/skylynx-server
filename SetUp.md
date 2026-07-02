@@ -32,7 +32,7 @@ docker-compose -f docker-compose-dev.yml up -it
 > 
 ```
 docker-compose -f docker-compose-dev.yml up -d or
-docker-compose -f docker-compose-dev.yml --env-file .env.local up --build
+
 ```
 
 > to stop
@@ -121,4 +121,183 @@ git add .
 git commit -m "Initial commit Main branch"
 git remote add origin https://github.com/kurickabides/skylynx-server.git
 git push -u origin main
+```
+
+#GIS Model
+```mermaid
+flowchart TD
+  %% --- Substation & Source ---
+  A[Transmission Source<br/>69/115/138 kV] --> B[Substation Power Transformer<br/>69 kV → 12.47 kV]
+  B --> C1[Substation Bus]
+  C1 --> D1{Feeder A<br/>12.47 kV or 24.9 kV}
+  C1 --> D2{Feeder B<br/>12.47 kV or 24.9 kV}
+
+  %% --- Feeder Devices (typical sequence) ---
+  D1 --> E1[Breaker/Recloser<br/>Protection]
+  E1 --> E2[Sectionalizer<br/>Auto-Isolate]
+  E2 --> E3[Switch Manual/Motor<br/>Tie/Normal Open]
+  E3 --> E4[Voltage Regulator<br/>Boost/Buck]
+  E4 --> E5[Capacitor Bank<br/>Power Factor Volt Support]
+
+  %% --- Laterals off Feeder ---
+  E3 --> L1{Lateral Tap 1<br/>Primary 12.47/24.9 kV}
+  E4 --> L2{Lateral Tap 2<br/>Primary 12.47/24.9 kV}
+
+  %% --- Lateral Protection ---
+  L1 --> F1[Fuse Cutout<br/>Protect Lateral]
+  L2 --> F2[Fuse Cutout<br/>Protect Lateral]
+
+  %% --- Distribution Transformers on Laterals ---
+  F1 --> T1[Dist. XFMR Pole/Pad<br/>7.2 kV L-N → 120/240 V]
+  F1 --> T2[Dist. XFMR<br/>kVA Rated, Phase Assigned]
+  F2 --> T3[Dist. XFMR]
+  F2 --> T4[Dist. XFMR]
+
+  %% --- Secondary & Services ---
+  T1 --> S1[Secondary Conductors<br/>120/240 V, 208 V, 480 V]
+  T2 --> S2[Secondary Conductors]
+  T3 --> S3[Secondary Conductors]
+  T4 --> S4[Secondary Conductors]
+
+  S1 --> M1[Meters / Services]
+  S2 --> M2[Meters / Services]
+  S3 --> M3[Meters / Services]
+  S4 --> M4[Meters / Services]
+
+  %% --- Attachments / Joint Use (context for GIS) ---
+  P1[Poles/Structures<br/>Unique IDs] --- D1
+  P1 --- L1
+  P1 --- L2
+  P1 ---|Foreign Attachments<br/>Telco/Cable| FA[Attachment Records & Permits]
+
+  %% --- Notes (why GIS cares) ---
+  classDef note fill:#f7f7f7,stroke:#bbb,color:#333,font-size:11px;
+  N1[Connectivity drives load flow, fault studies, OMS]:::note
+  N2[Correct phase, device types, and locations are critical]:::note
+  N3[Easements, annexations, tax codes tie to parcels/poles]:::note
+  E5 --- N1
+  T2 --- N2
+  FA --- N3
+
+
+```
+## ArcMap ModelBuilder utility examples
+```mermaid 
+flowchart LR
+    %% Title
+    subgraph MB[ArcMap ModelBuilder: Feeder QA & Export Workflow]
+    direction LR
+
+    %% Inputs
+    A1[Input: Feeder Feature Class]:::input
+    A2[Input: Pole Feature Class]:::input
+    A3[Input: Device Tables]:::input
+
+    %% Step 1 - Select Updated Features
+    B1[Select Layer By Attribute<br/>WHERE EditDate >= Today-7]:::process
+    A1 --> B1
+
+    %% Step 2 - Geometry Validation
+    B2[Check Geometry<br/>Find Null Shapes / Bad Vertices]:::process
+    B1 --> B2
+
+    %% Step 3 - Attribute QA
+    B3[Select By Attributes<br/>Null PhaseDesignation or PoleID]:::process
+    A2 --> B3
+
+    %% Step 4 - Connectivity QA
+    B4[Select By Location<br/>Poles Not Intersecting Conductors]:::process
+    B3 --> B4
+    A2 --> B4
+
+    %% Step 5 - Export QA Results
+    B5[Export Selected Features<br/>to QA GDB]:::process
+    B4 --> B5
+    B2 --> B5
+
+    %% Step 6 - Create Feeder Map
+    B6[Clip Feeder Features<br/>to Service Area]:::process
+    B1 --> B6
+    B6 --> B7[Map Document → PDF Export]:::process
+
+    %% Step 7 - Deliverables
+    B7 --> C1[QA GDB for Engineering]:::output
+    B7 --> C2[Feeder PDF Map for Field Crews]:::output
+    B5 --> C1
+
+    end
+
+    %% Styles
+    classDef input fill:#cce5ff,stroke:#2b6cb0,stroke-width:1px,color:#000,font-weight:bold;
+    classDef process fill:#fef6e4,stroke:#d97706,stroke-width:1px,color:#000;
+    classDef output fill:#d4edda,stroke:#2f855a,stroke-width:1px,color:#000,font-weight:bold;
+
+
+```
+# storm workflow
+
+```mermaid
+
+flowchart TD
+  %% Storm GIS Workflow Overview
+  A[Storm Watch and Prep] --> B[EOC Activation and Data Sync]
+  B --> C[Live Outage Mapping and Dashboards]
+  C --> D[Network Traces to Suspect Device]
+  D --> E[Crew Assignment Support]
+  E --> F[Damage Assessment Intake and QA]
+  F --> G[Restoration Modeling and Switching Plans]
+  G --> H[Status Updates to OMS and Comms]
+  H --> I[Archive Event Layers and Corrections]
+  I --> J[After Action Review and Data Cleanup]
+
+  %% Data flows
+  subgraph Feeds
+    W[Weather Layers]
+    O[OMS Trouble Calls]
+    S[SCADA Device Status]
+    M[AMI Meter Pings]
+    R[Field Reports and GPS Photos]
+  end
+
+  W --> C
+  O --> C
+  S --> C
+  M --> C
+  R --> F
+
+
+```
+
+### gANT sTORM
+```mermaid
+gantt
+  title Storm Day Timeline for GIS
+  dateFormat HH:mm
+  axisFormat %H:%M
+
+  section Early Activation
+  EOC standup and sync with OMS and SCADA        :done,    06:00, 01:00
+  Load offline maps for crews                     :active,  06:30, 00:45
+
+  section Impact Window
+  Live outage intake and aggregation              :         07:30, 04:00
+  Downstream and upstream traces to suspect device:         08:00, 03:30
+  Crew assignment maps and grid access notes      :         08:30, 03:00
+
+  section Damage Assessment
+  Field reports ingest and QA location accuracy   :         12:00, 04:00
+  Update dashboards and restoration estimates     :         12:30, 03:30
+  Candidate switching plans and tie options       :         13:00, 03:00
+
+  section Restoration Tracking
+  Device status updates and map refresh           :         16:00, 03:00
+  Customer counts by outage polygon               :         16:15, 02:45
+  Comms exports web and print map sets            :         17:00, 02:00
+
+  section Wrap Up
+  Archive event layers and notes                  :         19:00, 01:00
+  Correct GIS features flagged during response    :         19:30, 01:00
+  After action packet for engineering and ops     :         20:00, 01:00
+
+
 ```

@@ -53,6 +53,27 @@ const getById = async (req: Request, res: Response) => {
   }
 };
 
+// ✅ Get a Api key
+const getPortalByAPIKey = async (req: Request, res: Response) => {
+  try {
+      const rawApiKey = req.apiKey;
+      let name = req.portalName as string;
+      
+      if (!name && rawApiKey) {
+        const record = await PortalModel.getPortalByApiKeyID(rawApiKey);
+        if (!record || !record.PortalName) {
+          return res.status(404).json({ error: "Portal not found" });
+        }
+
+        name = record.PortalName;
+      }
+    res.json(name);
+  } catch (error) {
+    console.error("❌ Error fetching portal:", error);
+    res.status(500).json({ error: "Internal Server Error:getPortalByAPIKey" });
+  }
+};
+
 const getPortalsByUser = async (req: Request, res: Response) => {
   try {
 
@@ -83,7 +104,7 @@ const update = async (req: Request, res: Response) => {
     res.json({ message: "Portal updated successfully" });
   } catch (error) {
     console.error("❌ Error updating portal:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error: updating Portal" });
   }
 };
 
@@ -95,7 +116,7 @@ const remove = async (req: Request, res: Response) => {
     res.json({ message: "Portal deleted successfully" });
   } catch (error) {
     console.error("❌ Error deleting portal:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error: removing" });
   }
 };
 
@@ -104,6 +125,7 @@ const portalController = {
   create,
   getAll,
   getById,
+  getPortalByAPIKey,
   getPortalsByUser,
   update,
   remove,

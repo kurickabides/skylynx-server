@@ -48,6 +48,22 @@ const getPortalById = async (portalId: string) => {
   }
 };
 
+const getPortalByApiKeyID = async (apiKeyID: string) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("ApiKeyID", sql.UniqueIdentifier, apiKeyID)
+      .execute("GetPortalByAPIKey");
+
+    return result.recordset.length > 0 ? result.recordset[0] : null;
+  } catch (error) {
+    console.error("❌ Error fetching portal:", error);
+    throw error;
+  }
+};
+
+
 const updatePortal = async (
   portalId: string,
   portalName: string,
@@ -103,6 +119,7 @@ const PortalModel = {
   getAllPortals,
   getPortalsByUserID,
   getPortalById,
+  getPortalByApiKeyID,
   updatePortal,
   deletePortal,
 };
