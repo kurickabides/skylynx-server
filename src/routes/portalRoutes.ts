@@ -5,20 +5,22 @@ import authMiddleware from "../middleware/authMiddleware";
 const router = express.Router();
 
 // ✅ Get all portals (authenticated users)
-router.get("/", authMiddleware.authenticate, portalController.getAll);
+router.get("/", portalController.getAll);
 
 // ✅ Get portal by ID
-router.get("/:id", authMiddleware.authenticate, portalController.getById);
+router.get("/:id", portalController.getById);
 
 // ✅ Create new portal
-router.post("/", authMiddleware.authenticate, portalController.create);
+router.post("/", portalController.create);
 
 // ✅ Update portal
-router.put("/:id", authMiddleware.authenticate, portalController.update);
+router.put("/:id",portalController.update);
 
 // ✅ Delete portal
-router.delete("/:id", authMiddleware.authenticate, portalController.remove);
+router.delete("/:id", portalController.remove);
 
 router.post("/byuser",portalController.getPortalsByUser);
+
+router.post("/byapikey", portalController.getPortalByAPIKey);
 
 export default router;

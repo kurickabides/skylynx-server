@@ -13,6 +13,8 @@ import authenticateAPI from "./middleware/authenticateAPI"; // ✅ renamed for p
 import dyformRoutes from "./routes/dyformRoutes";
 import protosRoutes  from "./routes/protos";
 import nimbusCoreRoutes  from "./routes/nimbusCore";
+import paymentRoutes from "./routes/paymentRoutes";
+
 dotenv.config();
 
 const app = express();
@@ -30,6 +32,8 @@ app.use("/api/portals", authenticateAPI, portalRoutes);
 app.use("/api/dyform", authenticateAPI, dyformRoutes);
 app.use("/api/protos/", authenticateAPI, protosRoutes);
 app.use("/api/nimbus/", authenticateAPI, nimbusCoreRoutes);
+app.use("/api/payments", paymentRoutes);
+
 
 // Base API Route
 app.get("/api", (req: Request, res: Response) => {
