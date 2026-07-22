@@ -1,0 +1,15 @@
+/*
+  SkyLynx SQL Seed Export
+  Database: skylynxnet_coredb
+  Section: Seed dbo.PortalPageModules
+  Generated: 2026-07-22T22:36:46.881Z
+  Intended use: fresh database seeding after core schema install.
+*/
+GO
+
+SET NOCOUNT ON;
+INSERT INTO [dbo].[PortalPageModules] ([PortalPageModuleID], [PortalID], [ModuleID], [CreatedAt], [PageID], [ContainerName]) VALUES (N'C5FA4985-B611-4CE0-9ACD-30FB8FCB74EE', N'2946338F-DBAE-4BF9-AE8E-8BC8C42559E9', N'1D8F6ED2-0032-494E-95FB-4EBC611232FD', N'2025-08-08 21:31:57.577', N'8785B403-A851-4480-B2DB-3E53FD10688A', N'EDPDFModuleContainer');
+INSERT INTO [dbo].[PortalPageModules] ([PortalPageModuleID], [PortalID], [ModuleID], [CreatedAt], [PageID], [ContainerName]) VALUES (N'FF7ECD7E-2197-4D09-9A04-3F229CF5D9D1', N'2946338F-DBAE-4BF9-AE8E-8BC8C42559E9', N'6B532EDF-EABE-4566-AEA4-831FE6FB583E', N'2025-08-08 21:31:57.590', N'8785B403-A851-4480-B2DB-3E53FD10688A', N'ESRIMapModuleContainer');
+INSERT INTO [dbo].[PortalPageModules] ([PortalPageModuleID], [PortalID], [ModuleID], [CreatedAt], [PageID], [ContainerName]) VALUES (N'AB11ABE9-A590-4DC3-A54B-67AAEA3614F1', N'2946338F-DBAE-4BF9-AE8E-8BC8C42559E9', N'B4055488-B1E6-4A0D-B189-AB4560CB2440', N'2025-09-23 22:34:50.593', N'8785B403-A851-4480-B2DB-3E53FD10688A', N'PaymentModuleContainer');
+INSERT INTO [dbo].[PortalPageModules] ([PortalPageModuleID], [PortalID], [ModuleID], [CreatedAt], [PageID], [ContainerName]) VALUES (N'D514EDA1-FD42-4473-B97E-CA0BFF079469', N'2946338F-DBAE-4BF9-AE8E-8BC8C42559E9', N'102AB7AE-3DDB-41E1-85EB-BCF88AD44343', N'2025-08-08 21:31:57.590', N'8785B403-A851-4480-B2DB-3E53FD10688A', N'GalleryListContainer');
+GO
