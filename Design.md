@@ -1994,4 +1994,149 @@ sequenceDiagram
 Protos layer (a minimal ProtosTemplate + ProtosTemplateVersion + ProtosTemplateLink)
 
 
+## Server Install and Settings UI Plan
+
+### Objective
+
+The SkyLynx server should be able to bootstrap itself on a new machine when no configured SQL database is available. The first-run flow will expose a server-hosted install page that collects database connection information, validates SQL Server access, installs the required database files, and optionally seeds sandbox/test data.
+
+This is planned as a server administration experience, separate from normal portal/client workflows.
+
+### First-Run Install Path
+
+When the server starts, it should check whether the required databases and core tables exist. If the check fails, the server should enter install mode and expose an install page.
+
+Planned route:
+
+```text
+/install
+```
+
+The install page should be built with MUI, matching the client application's design system. The page should guide the user through:
+
+1. SQL Server connection settings.
+2. Connection test.
+3. Database install selection.
+4. Seed choice.
+5. Install execution and progress.
+6. Final server settings write.
+
+### Database Install Sources
+
+Database install files now live under:
+
+```text
+src/data/core
+src/data/core/seed
+src/data/portal
+src/data/portal/seed
+```
+
+Core database:
+
+```text
+Database: skylynxnet_coredb
+Install runner: src/data/core/install_core.sql
+Seed runner: src/data/core/seed/seed_core.sql
+```
+
+Portal template database:
+
+```text
+Database: skylynx_portal_template
+Install runner: src/data/portal/install_portal.sql
+Seed runner: src/data/portal/seed/seed_portal.sql
+```
+
+Install order should be:
+
+1. Core database.
+2. Portal template database.
+
+The current server uses both databases conceptually, and core should be treated as the foundation for identity, portal registration, Protos, DyForm, payments, settings, and shared reference data.
+
+### Seed Options
+
+The installer should offer two modes:
+
+```text
+Build fresh
+Seed sandbox data
+```
+
+Build fresh installs schema, stored procedures, views, triggers, and relationships without test records.
+
+Seed sandbox data installs schema first, then runs the seed scripts exported from the current sandbox databases. This is useful for spinning up a new SQL test machine with the same development metadata and sample data.
+
+### Settings Page
+
+After install, the server should expose a protected settings page for changing server-level configuration.
+
+Planned route:
+
+```text
+/settings
+```
+
+Initial settings areas:
+
+- SQL Server connection settings.
+- Core database name.
+- Portal template database name.
+- API/server port and public base URL.
+- Logging level.
+- Install status and database health checks.
+- Payment provider mode and webhook URL checks.
+- Backup/restore or export status.
+
+Settings should not be mixed into normal portal user pages. This should be an admin-only server operation surface.
+
+### Database Settings and Rollover
+
+Future settings should support database rollover/fallback planning. The goal is not full clustering yet, but the design should leave room for:
+
+- Primary SQL Server connection.
+- Secondary/fallback SQL Server connection.
+- Read-only health checks for both.
+- Manual failover setting.
+- Future automatic failover policy.
+- Last successful connection timestamp.
+- Database schema version tracking.
+
+These settings should be persisted outside the databases they configure so the server can still enter install/settings mode if the configured DB is unavailable. Candidate storage:
+
+```text
+.env for local development
+server settings JSON for installer-managed configuration
+encrypted secret store later for production credentials
+```
+
+### Install Mode Safety
+
+Install mode should be explicit and constrained:
+
+- Do not run schema installs automatically against an existing database without confirmation.
+- Show the target server and database names before executing.
+- Keep schema install and seed install as separate steps.
+- Prefer fresh databases for build-from-scratch installs.
+- Log every install step to console and server logs.
+- Never expose the install/settings pages publicly after setup without admin authentication.
+
+### Future Schema Organization Note
+
+The current core database mostly uses `dbo`, with `Payments` already separated into its own schema. During a future refactor, consider moving major domains into clearer schemas:
+
+```text
+Identity
+Portal
+Protos
+DyForm
+Payments
+Audit
+Reference
+```
+
+This should be treated as a migration project because it will affect tables, views, stored procedures, seed scripts, TypeScript service calls, and hard-coded SQL object names.
+
+
 _Last updated: 2025-07-05_

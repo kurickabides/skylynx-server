@@ -1,0 +1,11 @@
+00_database.sql
+01_schemas.sql
+02_types.sql
+03_tables.sql
+04_constraints.sql
+05_relationships.sql
+06_indexes.sql
+07_functions.sql
+08_views.sql
+09_stored_procedures.sql
+10_triggers.sql

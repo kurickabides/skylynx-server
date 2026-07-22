@@ -1,0 +1,35 @@
+{
+  "database": "skylynx_portal_template",
+  "generatedAt": "2026-07-22T22:47:38.323Z",
+  "installAfter": "core/skylynxnet_coredb should be installed first when both databases are used by the same server.",
+  "schemaFiles": [
+    "00_database.sql",
+    "01_schemas.sql",
+    "02_types.sql",
+    "03_tables.sql",
+    "04_constraints.sql",
+    "05_relationships.sql",
+    "06_indexes.sql",
+    "07_functions.sql",
+    "08_views.sql",
+    "09_stored_procedures.sql",
+    "10_triggers.sql"
+  ],
+  "seedFiles": [
+    "001_dbo.ANNOUNCEMENTS.sql",
+    "002_dbo.CUSTOM_FORMS.sql",
+    "003_dbo.PAGE_VARIABLES.sql",
+    "004_dbo.PORTAL_PAGES.sql"
+  ],
+  "counts": {
+    "tables": 4,
+    "schemas": 0,
+    "tableTypes": 0,
+    "foreignKeys": 0,
+    "functions": 0,
+    "views": 0,
+    "storedProcedures": 14,
+    "triggers": 4,
+    "routines": 14
+  }
+}
