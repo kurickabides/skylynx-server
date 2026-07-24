@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Route: authRoutes
+// Description: User authentication endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: routes/authRoutes.ts
+// ================================================
+
 import express from "express";
 import authController from "../controllers/auth";
 

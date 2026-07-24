@@ -1,4 +1,11 @@
-// ProfileField.ts
+// ================================================
+// ✅ Interface: ProfileField
+// Description: User profile field entities and view models
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: entities/ProfileField.ts
+// ================================================
 export interface UserProfileField {
   FieldID: string;
   FieldValue: string;

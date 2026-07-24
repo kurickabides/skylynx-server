@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Utility: loggerAuth
+// Description: Auth-specific Winston logging utility
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: utils/loggerAuth.js
+// ================================================
+
 var winston = require("winston");
 const { format } = require("winston");
 const { combine, timestamp, label, printf } = format;

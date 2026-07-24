@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Middleware: authMiddleware
+// Description: Validates JWTs and authorizes role-based access
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/authMiddleware.ts
+// ================================================
+
 import jwt from "jsonwebtoken";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "./types";

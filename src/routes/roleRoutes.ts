@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Route: roleRoutes
+// Description: Role lookup, creation, and assignment endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: routes/roleRoutes.ts
+// ================================================
+
 import express from "express";
 import roleController from "../controllers/roles";
 import authMiddleware from "../middleware/authMiddleware";

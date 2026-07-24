@@ -1,0 +1,9 @@
+{
+  "adminId": "server-owner",
+  "username": "admin",
+  "passwordHash": "$2b$12$example-password-hash-created-by-install",
+  "roles": ["SERVER_ADMIN"],
+  "createdAt": "2026-07-23T00:00:00.000Z",
+  "lastLoginAt": null,
+  "passwordVersion": 1
+}

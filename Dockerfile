@@ -15,11 +15,12 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/dist ./dist
 COPY package*.json ./
+RUN mkdir -p /app/admin
 
 RUN npm install --only=production
 
 EXPOSE 3200
 
-CMD ["node", "build/server.js"]
+CMD ["node", "dist/server.js"]

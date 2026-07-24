@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Controller: portalsController
+// Description: Handles portal CRUD and API key endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/portals.ts
+// ================================================
+
 import { Request, Response } from "express";
 import PortalModel from "../services/portalModel";
 

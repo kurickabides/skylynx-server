@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Service: portalModel
+// Description: Handles portal database operations
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/portalModel.ts
+// ================================================
+
 import { poolPromise, sql } from "../config/db";
 
 const createPortal = async (

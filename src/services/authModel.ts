@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Service: authModel
+// Description: Handles password hashing, password comparison, and JWT generation
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/authModel.ts
+// ================================================
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 

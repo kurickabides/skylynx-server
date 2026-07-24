@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Route: userRoutes
+// Description: User management endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: routes/userRoutes.ts
+// ================================================
+
 import express from "express";
 import userController from "../controllers/users";
 import authMiddleware from "../middleware/authMiddleware";

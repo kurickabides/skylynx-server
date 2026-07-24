@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Controller: rolesController
+// Description: Handles role lookup, creation, and assignment endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/roles.ts
+// ================================================
+
 import { Request, Response } from "express";
 import RoleModel from "../services/roleModel"; // 👈 Corrected import
 

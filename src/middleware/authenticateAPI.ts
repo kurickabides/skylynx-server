@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Middleware: authenticateAPI
+// Description: Validates portal API keys and attaches portal context
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/authenticateAPI.ts
+// ================================================
+
 import { Request, Response, NextFunction } from "express";
 import { poolPromise, sql } from "../config/db";
 

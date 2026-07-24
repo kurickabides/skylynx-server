@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Controller: usersController
+// Description: Handles user lookup, creation, role, and profile endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/users.ts
+// ================================================
+
 import { Request, Response } from "express";
 import userModel from "../services/userModel";
 import { AuthenticatedRequest } from "../middleware/types";

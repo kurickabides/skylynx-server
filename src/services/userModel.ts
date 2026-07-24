@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Service: userModel
+// Description: Handles user database operations and role/profile lookups
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/userModel.ts
+// ================================================
+
 import { poolPromise, sql } from "../config/db";
 // import { randomUUID } from "crypto"; // Uncomment if generating UUIDs in app logic
 

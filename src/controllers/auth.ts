@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Controller: authController
+// Description: Handles user signup and login requests
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/auth.ts
+// ================================================
+
 import { Request, Response } from "express";
 import authModel from "../services/authModel";
 import userModel from "../services/userModel";

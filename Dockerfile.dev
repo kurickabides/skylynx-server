@@ -11,7 +11,10 @@ RUN npm audit fix --force || true
 
 # Copy TypeScript source and config
 COPY src/ ./src
+COPY admin/ ./admin
 COPY tsconfig.json ./
+
+ENV SKYLYNX_ADMIN_DIR=/app/admin
 
 # Optionally copy .env if needed
 # COPY .env.local .env

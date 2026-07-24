@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Service: roleModel
+// Description: Handles role lookup, creation, and assignment operations
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/roleModel.ts
+// ================================================
+
 import { poolPromise, sql } from "../config/db";
 
 // ✅ Get all roles using a stored procedure

@@ -2,9 +2,11 @@
 services:
   skylynx-express:
     build:
-      context: ./skylynx-express
+      context: .
       dockerfile: Dockerfile
     container_name: skylynx-express
+    env_file:
+      - .env
     ports:
       - "5001:3200"
     environment:
@@ -13,7 +15,17 @@ services:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_NAME=${DB_NAME}
+      - DB_BACKUP_HOST=${DB_BACKUP_HOST}
+      - DB_BACKUP_PORT=${DB_BACKUP_PORT}
+      - DB_BACKUP_USER=${DB_BACKUP_USER}
+      - DB_BACKUP_PASSWORD=${DB_BACKUP_PASSWORD}
+      - DB_BACKUP_NAME=${DB_BACKUP_NAME}
+      - DB_BACKUP_PORTAL_NAME=${DB_BACKUP_PORTAL_NAME}
       - JWT_SECRET=${JWT_SECRET}
+      - SERVER_JWT_SECRET=${SERVER_JWT_SECRET}
+      - SKYLYNX_ADMIN_DIR=/app/admin
+    volumes:
+      - ./admin:/app/admin
     networks:
       - silverlining
 

@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Config: Database
+// Description: SQL Server connection pool configuration
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: config/db.ts
+// ================================================
+
 import * as sql from "mssql";
 
 // Define the configuration object

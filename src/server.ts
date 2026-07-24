@@ -1,4 +1,11 @@
-// server.ts
+// ================================================
+// ✅ Server: SkyLynx Express Server
+// Description: Configures middleware, routes, health pages, and graceful shutdown
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: server.ts
+// ================================================
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -14,6 +21,10 @@ import dyformRoutes from "./routes/dyformRoutes";
 import protosRoutes  from "./routes/protos";
 import nimbusCoreRoutes  from "./routes/nimbusCore";
 import paymentRoutes from "./routes/paymentRoutes";
+import serverAuthRoutes from "./routes/serverAuthRoutes";
+import serverSettingsRoutes from "./routes/serverSettingsRoutes";
+import { serverLoginPage } from "./admin/serverLoginPage";
+import { serverHomePage } from "./admin/serverHomePage";
 
 dotenv.config();
 
@@ -23,6 +34,23 @@ const port = parseInt(process.env.PORT || "3200", 10);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+app.get("/", (req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.type("html").send(serverHomePage);
+});
+
+// Server admin console routes. These are intentionally separate from portal API key auth.
+app.get(["/admin", "/server/login", "/server/settings"], (req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.type("html").send(serverLoginPage);
+});
+app.use("/api/server/auth", serverAuthRoutes);
+app.use("/api/server/settings", serverSettingsRoutes);
 
 // Routes
 app.use("/api/auth", authenticateAPI, authRoutes);

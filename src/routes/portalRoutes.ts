@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Route: portalRoutes
+// Description: Portal management endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: routes/portalRoutes.ts
+// ================================================
+
 import express from "express";
 import portalController from "../controllers/portals";
 import authMiddleware from "../middleware/authMiddleware";

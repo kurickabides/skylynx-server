@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Middleware: portalMiddleware
+// Description: Validates portal API key access
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/portalMiddleware.ts
+// ================================================
+
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "./types";
 import userModel from "../services/userModel";

@@ -1,3 +1,12 @@
+// ================================================
+// ✅ Middleware: roleMiddleware
+// Description: Authorizes authenticated users by role
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/roleMiddleware.ts
+// ================================================
+
   import { Request, Response, NextFunction } from "express";
   import userModel from "../services/userModel";
   import { AuthenticatedRequest } from "./types";
