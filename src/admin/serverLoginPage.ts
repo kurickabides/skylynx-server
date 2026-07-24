@@ -57,10 +57,10 @@ export const serverLoginPage = `<!doctype html>
       const [error, setError] = useState("");
       const [settings, setSettings] = useState(null);
       const [database, setDatabase] = useState(null);
-      const [dbTest, setDbTest] = useState(null);
-      const [backupDbTest, setBackupDbTest] = useState(null);
-      const [testingDb, setTestingDb] = useState(false);
-      const [testingBackupDb, setTestingBackupDb] = useState(false);
+      const [dbTests, setDbTests] = useState({});
+      const [dbMessages, setDbMessages] = useState({});
+      const [databaseLists, setDatabaseLists] = useState({});
+      const [busyDatabase, setBusyDatabase] = useState("");
       const [showDbPassword, setShowDbPassword] = useState(false);
       const [showBackupPassword, setShowBackupPassword] = useState(false);
 
@@ -104,6 +104,12 @@ export const serverLoginPage = `<!doctype html>
           const databaseResult = await api("/api/server/settings/database");
           setSettings(status);
           setDatabase(databaseResult);
+          setDatabaseLists({
+            primaryCore: databaseResult.primaryCore?.database ? [databaseResult.primaryCore.database] : [],
+            primaryPortal: databaseResult.primaryPortal?.database ? [databaseResult.primaryPortal.database] : [],
+            backupCore: databaseResult.backupCore?.database ? [databaseResult.backupCore.database] : [],
+            backupPortal: databaseResult.backupPortal?.database ? [databaseResult.backupPortal.database] : []
+          });
           history.replaceState(null, "", "/server/settings");
         } catch (err) {
           setError(err.message);
@@ -117,6 +123,12 @@ export const serverLoginPage = `<!doctype html>
           const databaseResult = await api("/api/server/settings/database");
           setSettings(status);
           setDatabase(databaseResult);
+          setDatabaseLists({
+            primaryCore: databaseResult.primaryCore?.database ? [databaseResult.primaryCore.database] : [],
+            primaryPortal: databaseResult.primaryPortal?.database ? [databaseResult.primaryPortal.database] : [],
+            backupCore: databaseResult.backupCore?.database ? [databaseResult.backupCore.database] : [],
+            backupPortal: databaseResult.backupPortal?.database ? [databaseResult.backupPortal.database] : []
+          });
           if (showLoadedMessage) setMessage("Settings loaded.");
         } catch (err) {
           localStorage.removeItem("skylynxServerToken");
@@ -128,140 +140,252 @@ export const serverLoginPage = `<!doctype html>
       const signedIn = Boolean(settings && database);
       const showLoginForm = !signedIn;
 
-      function updateDatabase(field, value) {
-        setDatabase({ ...database, [field]: value });
+      function fieldValue(sectionKey, field, fallback = "") {
+        const input = document.getElementById(sectionKey + "-" + field);
+        return input ? input.value : fallback;
       }
 
-      async function testPrimaryDb() {
+      function readDatabaseSection(sectionKey) {
+        const section = database[sectionKey] || {};
+        return {
+          ...section,
+          host: fieldValue(sectionKey, "host", section.host || ""),
+          port: fieldValue(sectionKey, "port", section.port || ""),
+          username: fieldValue(sectionKey, "username", section.username || ""),
+          password: fieldValue(sectionKey, "password", section.password || ""),
+          database: fieldValue(sectionKey, "database", section.database || "")
+        };
+      }
+
+      function syncDatabaseSection(sectionKey) {
+        const nextSection = readDatabaseSection(sectionKey);
+        setDatabase({
+          ...database,
+          [sectionKey]: nextSection
+        });
+        return nextSection;
+      }
+
+      function databasePayload(sectionKey) {
+        const section = readDatabaseSection(sectionKey);
+        return {
+          target: sectionKey,
+          provider: "sqlserver",
+          host: section.host || "",
+          port: Number(section.port || 1433),
+          username: section.username || "",
+          database: section.database || "",
+          role: section.role || "core",
+          ...(section.password ? { password: section.password } : {})
+        };
+      }
+
+      function setSectionMessage(sectionKey, severity, text) {
+        setDbMessages({ ...dbMessages, [sectionKey]: { severity, text } });
+      }
+
+      async function testDatabase(sectionKey) {
         setError("");
-        setMessage("");
-        setTestingDb(true);
+        setSectionMessage(sectionKey, "info", "Testing database connection...");
+        setBusyDatabase(sectionKey + ":test");
         try {
-          const result = await api("/api/server/settings/database/test-primary", { method: "POST" });
-          setDbTest(result);
-          setMessage(result.message);
+          syncDatabaseSection(sectionKey);
+          const result = await api("/api/server/settings/database/test", { method: "POST", body: JSON.stringify(databasePayload(sectionKey)) });
+          setDbTests({ ...dbTests, [sectionKey]: result });
+          setSectionMessage(sectionKey, result.ok ? "success" : "warning", result.message);
         } catch (err) {
-          setError(err.message);
+          setSectionMessage(sectionKey, "error", err.message);
         } finally {
-          setTestingDb(false);
+          setBusyDatabase("");
         }
       }
 
-      async function testBackupDb() {
+      async function listDatabases(sectionKey) {
         setError("");
-        setMessage("");
-        setTestingBackupDb(true);
+        setSectionMessage(sectionKey, "info", "Testing SQL Server and loading database list...");
+        setBusyDatabase(sectionKey + ":list");
         try {
-          const result = await api("/api/server/settings/database/test-backup", { method: "POST" });
-          setBackupDbTest(result);
-          setMessage(result.message);
+          const nextSection = syncDatabaseSection(sectionKey);
+          const result = await api("/api/server/settings/database/list", { method: "POST", body: JSON.stringify(databasePayload(sectionKey)) });
+          const names = result.databases || [];
+          const mergedNames = nextSection.database && !names.includes(nextSection.database) ? [nextSection.database, ...names] : names;
+          setDatabaseLists({ ...databaseLists, [sectionKey]: mergedNames });
+          setSectionMessage(sectionKey, "success", "Server connection tested. Found " + names.length + " database" + (names.length === 1 ? "." : "s."));
         } catch (err) {
-          setError(err.message);
+          setSectionMessage(sectionKey, "error", err.message);
         } finally {
-          setTestingBackupDb(false);
+          setBusyDatabase("");
+        }
+      }
+
+      async function createDatabase(sectionKey) {
+        setError("");
+        setSectionMessage(sectionKey, "info", "Creating database...");
+        setBusyDatabase(sectionKey + ":create");
+        try {
+          syncDatabaseSection(sectionKey);
+          const result = await api("/api/server/settings/database/create", { method: "POST", body: JSON.stringify(databasePayload(sectionKey)) });
+          setDbTests({ ...dbTests, [sectionKey]: result });
+          await listDatabases(sectionKey);
+          setSectionMessage(sectionKey, "success", "Database created. " + result.message);
+        } catch (err) {
+          setSectionMessage(sectionKey, "error", err.message);
+        } finally {
+          setBusyDatabase("");
+        }
+      }
+
+      async function installDatabase(sectionKey) {
+        setError("");
+        setSectionMessage(sectionKey, "info", "Installing database schema and seed data...");
+        setBusyDatabase(sectionKey + ":install");
+        try {
+          syncDatabaseSection(sectionKey);
+          const result = await api("/api/server/settings/database/install", { method: "POST", body: JSON.stringify(databasePayload(sectionKey)) });
+          setDbTests({ ...dbTests, [sectionKey]: result });
+          setSectionMessage(
+            sectionKey,
+            result.installed ? "success" : "warning",
+            result.message + " Batches executed: " + result.batchesExecuted + ". Log: " + (result.installLogPath || "not available") + "."
+          );
+        } catch (err) {
+          setSectionMessage(sectionKey, "error", err.message);
+        } finally {
+          setBusyDatabase("");
         }
       }
 
       function DatabaseSettings() {
         if (!database) return null;
+        const sections = [
+          {
+            key: "primaryCore",
+            title: "Primary Core SQL Server",
+            description: "SkyLynx core identity, portals, settings, and system data.",
+            testLabel: "Test Core DB",
+            installLabel: "Install Core DB",
+            showPassword: showDbPassword,
+            setShowPassword: setShowDbPassword
+          },
+          {
+            key: "primaryPortal",
+            title: "Primary Portal SQL Server",
+            description: "Portal content and template database. This can point to a separate template server.",
+            testLabel: "Test Portal DB",
+            installLabel: "Install Portal DB",
+            showPassword: showDbPassword,
+            setShowPassword: setShowDbPassword
+          },
+          {
+            key: "backupCore",
+            title: "Backup Core SQL Server",
+            description: "Backup target for SkyLynx core data.",
+            testLabel: "Test Backup Core",
+            installLabel: "Install Backup Core",
+            showPassword: showBackupPassword,
+            setShowPassword: setShowBackupPassword
+          },
+          {
+            key: "backupPortal",
+            title: "Backup Portal SQL Server",
+            description: "Backup target for portal content and template data.",
+            testLabel: "Test Backup Portal",
+            installLabel: "Install Backup Portal",
+            showPassword: showBackupPassword,
+            setShowPassword: setShowBackupPassword
+          }
+        ];
+
+        function DatabaseSection(config) {
+          const section = database[config.key] || {};
+          const test = dbTests[config.key];
+          const sectionMessage = dbMessages[config.key];
+          const dbOptions = databaseLists[config.key] || [];
+          const installReady = Boolean(test && test.databaseExists && test.tableCount === 0);
+          const createReady = Boolean(section.database && test && !test.databaseExists);
+          const busy = busyDatabase.startsWith(config.key + ":");
+          return React.createElement(Stack, { spacing: 1.5, key: config.key },
+            React.createElement(Stack, { direction: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 },
+              React.createElement(Box, null,
+                React.createElement(Typography, { variant: "h6" }, config.title),
+                React.createElement(Typography, { variant: "body2", color: "text.secondary" }, config.description)
+              ),
+              React.createElement(Stack, { direction: "row", spacing: 1, flexWrap: "wrap" },
+                React.createElement(Button, { variant: "outlined", onClick: () => listDatabases(config.key), disabled: busy }, busyDatabase === config.key + ":list" ? "Loading..." : "Test Server"),
+                React.createElement(Button, { variant: "contained", onClick: () => testDatabase(config.key), disabled: busy }, busyDatabase === config.key + ":test" ? "Testing..." : config.testLabel),
+                React.createElement(Button, { variant: "outlined", onClick: () => createDatabase(config.key), disabled: busy || !createReady }, busyDatabase === config.key + ":create" ? "Creating..." : "Create Database"),
+                React.createElement(Button, { variant: "contained", color: "success", onClick: () => installDatabase(config.key), disabled: busy || !installReady }, busyDatabase === config.key + ":install" ? "Installing..." : config.installLabel)
+              )
+            ),
+            sectionMessage && React.createElement(Alert, { severity: sectionMessage.severity }, sectionMessage.text),
+            test && React.createElement(Alert, { severity: test.ok ? "success" : "warning" },
+              React.createElement(Stack, { spacing: 0.5 },
+                React.createElement(Typography, { variant: "subtitle2" }, test.ok ? config.title + " is ready." : config.title + " needs attention."),
+                React.createElement(Typography, { variant: "body2" }, test.message),
+                React.createElement(Typography, { variant: "body2" }, "Server: " + (test.serverName || section.host || "unknown")),
+                React.createElement(Typography, { variant: "body2" }, "Database: " + test.database + " | Tables: " + test.tableCount),
+                React.createElement(Typography, { variant: "body2" }, "Database exists: " + (test.databaseExists ? "yes" : "no"))
+              )
+            ),
+            React.createElement(Grid, { container: true, spacing: 2 },
+              React.createElement(Grid, { item: true, xs: 12, sm: 8 },
+                React.createElement(TextField, { id: config.key + "-host", label: "SQL Server Name or IP", defaultValue: section.host || "", fullWidth: true })
+              ),
+              React.createElement(Grid, { item: true, xs: 12, sm: 4 },
+                React.createElement(TextField, { id: config.key + "-port", label: "Port", defaultValue: section.port || "", fullWidth: true })
+              ),
+              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
+                React.createElement(TextField, { id: config.key + "-username", label: "Database Username", defaultValue: section.username || "", fullWidth: true })
+              ),
+              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
+                React.createElement(TextField, {
+                  id: config.key + "-password",
+                  label: "Database Password",
+                  type: config.showPassword ? "text" : "password",
+                  defaultValue: section.password || "",
+                  placeholder: section.passwordConfigured ? "Configured password will be used if left blank" : "",
+                  fullWidth: true
+                })
+              ),
+              React.createElement(Grid, { item: true, xs: 12 },
+                React.createElement(TextField, {
+                  id: config.key + "-database",
+                  label: "Database Name",
+                  defaultValue: section.database || "",
+                  fullWidth: true,
+                  inputProps: { list: config.key + "-database-list" }
+                }),
+                React.createElement("datalist", { id: config.key + "-database-list" },
+                  dbOptions.map((name) => React.createElement("option", { key: name, value: name }))
+                ),
+                dbOptions.length > 0 && React.createElement(Typography, { variant: "caption", color: "text.secondary" }, dbOptions.length + " database option" + (dbOptions.length === 1 ? "" : "s") + " available.")
+              ),
+              React.createElement(Grid, { item: true, xs: 12 },
+                React.createElement(FormControlLabel, { control: React.createElement(Switch, { checked: config.showPassword, onChange: (e) => config.setShowPassword(e.target.checked) }), label: "Show password placeholder" })
+              )
+            )
+          );
+        }
+
         return React.createElement(Stack, { spacing: 2 },
           React.createElement(Tabs, { value: activeTab, onChange: (_event, value) => setActiveTab(value), sx: { borderBottom: 1, borderColor: "divider" } },
             React.createElement(Tab, { label: "Database" }),
-            React.createElement(Tab, { label: "Payment Providers" })
+            React.createElement(Tab, { label: "Payment Providers" }),
+            React.createElement(Tab, { label: "AI Providers" })
           ),
           activeTab === 0 && React.createElement(Stack, { spacing: 2 },
             React.createElement(Stack, { direction: "row", justifyContent: "space-between", alignItems: "center" },
               React.createElement(Box, null,
                 React.createElement(Typography, { variant: "h6" }, "Database"),
-                React.createElement(Typography, { variant: "body2", color: "text.secondary" }, "Database provider is locked to SQL Server for this build.")
+                React.createElement(Typography, { variant: "body2", color: "text.secondary" }, "Core and portal databases can be pointed at different SQL Servers.")
               ),
               React.createElement(Chip, { label: database.provider || "sqlserver", color: "primary", variant: "outlined" })
             ),
             React.createElement(Divider),
-            React.createElement(Stack, { spacing: 1 },
-              React.createElement(Stack, { direction: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 },
-                React.createElement(Typography, { variant: "h6" }, "Primary SQL Server"),
-                React.createElement(Stack, { direction: "row", spacing: 1, flexWrap: "wrap" },
-                  React.createElement(Button, { variant: "contained", onClick: testPrimaryDb, disabled: testingDb }, testingDb ? "Testing..." : "Test Primary DB"),
-                  React.createElement(Button, { variant: "outlined", onClick: () => loadSettings() }, "Refresh")
-                )
-              )
-            ),
-            dbTest && React.createElement(Alert, { severity: dbTest.ok ? "success" : "warning" },
-              React.createElement(Stack, { spacing: 0.5 },
-                React.createElement(Typography, { variant: "subtitle2" }, dbTest.ok ? "Primary database is ready." : "Primary database needs attention."),
-                React.createElement(Typography, { variant: "body2" }, dbTest.message),
-                React.createElement(Typography, { variant: "body2" }, "Server: " + (dbTest.serverName || database.host || "unknown")),
-                React.createElement(Typography, { variant: "body2" }, "Database: " + dbTest.database + " | Tables: " + dbTest.tableCount),
-                React.createElement(Typography, { variant: "body2" }, "Database exists: " + (dbTest.databaseExists ? "yes" : "no"))
-              )
-            ),
-            React.createElement(Grid, { container: true, spacing: 2 },
-              React.createElement(Grid, { item: true, xs: 12, sm: 8 },
-                React.createElement(TextField, { label: "SQL Server Name or IP", value: database.host || "", onChange: (e) => updateDatabase("host", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                React.createElement(TextField, { label: "Port", value: database.port || "", onChange: (e) => updateDatabase("port", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Core Database", value: database.coreDatabase || "", onChange: (e) => updateDatabase("coreDatabase", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Portal Database", value: database.portalDatabase || "", onChange: (e) => updateDatabase("portalDatabase", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Database Username", value: database.username || "", onChange: (e) => updateDatabase("username", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Database Password", type: showDbPassword ? "text" : "password", value: database.passwordConfigured ? "configured-password-hidden" : "", fullWidth: true, InputProps: { readOnly: true } })
-              ),
-              React.createElement(Grid, { item: true, xs: 12 },
-                React.createElement(FormControlLabel, { control: React.createElement(Switch, { checked: showDbPassword, onChange: (e) => setShowDbPassword(e.target.checked) }), label: "Show password placeholder" })
-              )
-            ),
-            React.createElement(Divider),
-            React.createElement(Stack, { spacing: 1 },
-              React.createElement(Stack, { direction: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 },
-                React.createElement(Box, null,
-                  React.createElement(Typography, { variant: "h6" }, "Backup SQL Server"),
-                  React.createElement(Typography, { variant: "body2", color: "text.secondary" }, "Reserved for manual rollover if the primary SQL Server goes down.")
-                ),
-                React.createElement(Stack, { direction: "row", spacing: 1, flexWrap: "wrap" },
-                  React.createElement(Button, { variant: "outlined", onClick: testBackupDb, disabled: testingBackupDb }, testingBackupDb ? "Testing..." : "Test Backup DB"),
-                  React.createElement(Button, { variant: "outlined", disabled: true }, "Sync Backup"),
-                  React.createElement(Button, { variant: "contained", color: "warning", disabled: true }, "Fail Over")
-                )
-              )
-            ),
-            backupDbTest && React.createElement(Alert, { severity: backupDbTest.ok ? "success" : "warning" },
-              React.createElement(Stack, { spacing: 0.5 },
-                React.createElement(Typography, { variant: "subtitle2" }, backupDbTest.ok ? "Backup database is ready." : "Backup database needs attention."),
-                React.createElement(Typography, { variant: "body2" }, backupDbTest.message),
-                React.createElement(Typography, { variant: "body2" }, "Server: " + (backupDbTest.serverName || database.backupHost || "unknown")),
-                React.createElement(Typography, { variant: "body2" }, "Database: " + backupDbTest.database + " | Tables: " + backupDbTest.tableCount),
-                React.createElement(Typography, { variant: "body2" }, "Database exists: " + (backupDbTest.databaseExists ? "yes" : "no"))
-              )
-            ),
-            React.createElement(Grid, { container: true, spacing: 2 },
-              React.createElement(Grid, { item: true, xs: 12, sm: 8 },
-                React.createElement(TextField, { label: "Backup SQL Server Name or IP", value: database.backupHost || "", onChange: (e) => updateDatabase("backupHost", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                React.createElement(TextField, { label: "Backup Port", value: database.backupPort || "", onChange: (e) => updateDatabase("backupPort", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Backup Core Database", value: database.backupCoreDatabase || "", onChange: (e) => updateDatabase("backupCoreDatabase", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Backup Username", value: database.backupUsername || "", onChange: (e) => updateDatabase("backupUsername", e.target.value), fullWidth: true })
-              ),
-              React.createElement(Grid, { item: true, xs: 12, sm: 6 },
-                React.createElement(TextField, { label: "Backup Password", type: showBackupPassword ? "text" : "password", value: database.backupPasswordConfigured ? "configured-password-hidden" : "", fullWidth: true, InputProps: { readOnly: true } })
-              ),
-              React.createElement(Grid, { item: true, xs: 12 },
-                React.createElement(FormControlLabel, { control: React.createElement(Switch, { checked: showBackupPassword, onChange: (e) => setShowBackupPassword(e.target.checked) }), label: "Show backup password placeholder" })
-              )
-            ),
+            ...sections.map((section, index) => React.createElement(React.Fragment, { key: section.key },
+              index > 0 && React.createElement(Divider),
+              DatabaseSection(section)
+            )),
             React.createElement(Stack, { direction: "row", spacing: 1, justifyContent: "flex-end" },
               React.createElement(Button, { variant: "contained", disabled: true }, "Save Later")
             )
@@ -272,6 +396,13 @@ export const serverLoginPage = `<!doctype html>
               React.createElement(Typography, { variant: "body2", color: "text.secondary" }, "Provider settings will live here after the database settings flow is stable.")
             ),
             React.createElement(Alert, { severity: "info" }, "Placeholder for Authorize.Net, PayPal, provider modes, webhook status, and payment secret configuration.")
+          ),
+          activeTab === 2 && React.createElement(Stack, { spacing: 2 },
+            React.createElement(Box, null,
+              React.createElement(Typography, { variant: "h6" }, "AI Providers"),
+              React.createElement(Typography, { variant: "body2", color: "text.secondary" }, "AI provider settings will live here after the server settings flow is stable.")
+            ),
+            React.createElement(Alert, { severity: "info" }, "Placeholder for OpenAI, provider modes, API keys, model defaults, and usage status.")
           )
         );
       }
@@ -285,7 +416,7 @@ export const serverLoginPage = `<!doctype html>
                 React.createElement(Typography, { variant: "h4", fontWeight: 700 }, "SkyLynx Server"),
                 React.createElement(Chip, { size: "small", label: "Admin", color: "primary" })
               ),
-              React.createElement(Typography, { color: "text.secondary" }, signedIn ? "Manage server database settings." : setupMode ? "Create the local server admin account." : "Sign in to manage server settings.")
+              React.createElement(Typography, { color: "text.secondary" }, signedIn ? "Manage server and api settings." : setupMode ? "Create the local server admin account." : "Sign in to manage server settings.")
             ),
             error && React.createElement(Alert, { severity: "error" }, error),
             message && React.createElement(Alert, { severity: "success" }, message),

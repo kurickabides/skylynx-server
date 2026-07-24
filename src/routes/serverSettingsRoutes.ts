@@ -27,32 +27,97 @@ router.get("/status", authenticateServerAdmin, (_req, res) => {
 router.get("/database", authenticateServerAdmin, (_req, res) => {
   res.json({
     provider: "sqlserver",
-    host: process.env.DB_HOST || "",
-    port: process.env.DB_PORT || "1433",
-    coreDatabase: process.env.DB_NAME || "skylynxnet_coredb",
-    portalDatabase: "skylynx_portal_template",
-    username: process.env.DB_USER || "",
-    passwordConfigured: Boolean(process.env.DB_PASSWORD),
-    backupHost: process.env.DB_BACKUP_HOST || "",
-    backupPort: process.env.DB_BACKUP_PORT || "",
-    backupCoreDatabase: process.env.DB_BACKUP_NAME || "",
-    backupUsername: process.env.DB_BACKUP_USER || "",
-    backupPasswordConfigured: Boolean(process.env.DB_BACKUP_PASSWORD),
+    primaryCore: {
+      ...serverDatabaseService.primaryCoreConfig(),
+      password: undefined,
+      passwordConfigured: Boolean(process.env.DB_PASSWORD),
+    },
+    primaryPortal: {
+      ...serverDatabaseService.primaryPortalConfig(),
+      password: undefined,
+      passwordConfigured: Boolean(process.env.DB_PORTAL_PASSWORD || process.env.DB_PASSWORD),
+    },
+    backupCore: {
+      ...serverDatabaseService.backupCoreConfig(),
+      password: undefined,
+      passwordConfigured: Boolean(process.env.DB_BACKUP_PASSWORD),
+    },
+    backupPortal: {
+      ...serverDatabaseService.backupPortalConfig(),
+      password: undefined,
+      passwordConfigured: Boolean(process.env.DB_BACKUP_PORTAL_PASSWORD || process.env.DB_BACKUP_PASSWORD),
+    },
   });
 });
 
 router.post("/database/test-primary", authenticateServerAdmin, async (_req, res) => {
   const result = await serverDatabaseService.testConnection(
-    serverDatabaseService.primaryConfig()
+    serverDatabaseService.primaryCoreConfig()
   );
   res.status(result.ok ? 200 : 200).json(result);
 });
 
 router.post("/database/test-backup", authenticateServerAdmin, async (_req, res) => {
   const result = await serverDatabaseService.testConnection(
-    serverDatabaseService.backupConfig()
+    serverDatabaseService.backupCoreConfig()
   );
   res.status(200).json(result);
+});
+
+router.post("/database/test", authenticateServerAdmin, async (req, res) => {
+  const target = req.body.target || "primaryCore";
+  const result = await serverDatabaseService.testConnection(
+    serverDatabaseService.cleanConfig({
+      ...serverDatabaseService.configForTarget(target),
+      ...req.body,
+    })
+  );
+  res.status(200).json(result);
+});
+
+router.post("/database/list", authenticateServerAdmin, async (req, res) => {
+  try {
+    const target = req.body.target || "primaryCore";
+    const databases = await serverDatabaseService.listDatabases(
+      serverDatabaseService.cleanConfig({
+        ...serverDatabaseService.configForTarget(target),
+        ...req.body,
+      })
+    );
+    res.json({ databases });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to list databases." });
+  }
+});
+
+router.post("/database/create", authenticateServerAdmin, async (req, res) => {
+  try {
+    const target = req.body.target || "primaryCore";
+    const result = await serverDatabaseService.createDatabase(
+      serverDatabaseService.cleanConfig({
+        ...serverDatabaseService.configForTarget(target),
+        ...req.body,
+      })
+    );
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to create database." });
+  }
+});
+
+router.post("/database/install", authenticateServerAdmin, async (req, res) => {
+  try {
+    const target = req.body.target || "primaryCore";
+    const result = await serverDatabaseService.installDatabase(
+      serverDatabaseService.cleanConfig({
+        ...serverDatabaseService.configForTarget(target),
+        ...req.body,
+      })
+    );
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to install database." });
+  }
 });
 
 export default router;

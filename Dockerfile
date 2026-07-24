@@ -16,6 +16,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/data ./src/data
 COPY package*.json ./
 RUN mkdir -p /app/admin
 

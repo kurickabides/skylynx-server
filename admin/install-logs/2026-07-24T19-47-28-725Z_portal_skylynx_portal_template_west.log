@@ -1,0 +1,51 @@
+[2026-07-24T19:47:28.727Z] Install started for portal database skylynx_portal_template_west on host.docker.internal:1433.
+[2026-07-24T19:47:28.729Z] Schema files: 01_schemas.sql, 02_types.sql, 03_tables.sql, 04_constraints.sql, 05_relationships.sql, 06_indexes.sql, 07_functions.sql, 08_views.sql, 09_stored_procedures.sql, 10_triggers.sql
+[2026-07-24T19:47:28.731Z] Seed files: 001_dbo.ANNOUNCEMENTS.sql, 002_dbo.CUSTOM_FORMS.sql, 003_dbo.PAGE_VARIABLES.sql, 004_dbo.PORTAL_PAGES.sql
+[2026-07-24T19:47:28.759Z] Transaction started.
+[2026-07-24T19:47:28.764Z] Executing 01_schemas.sql batch 1.
+[2026-07-24T19:47:28.771Z] Executing 02_types.sql batch 1.
+[2026-07-24T19:47:28.779Z] Executing 03_tables.sql batch 1.
+[2026-07-24T19:47:28.783Z] Executing 03_tables.sql batch 2.
+[2026-07-24T19:47:28.789Z] Executing 03_tables.sql batch 3.
+[2026-07-24T19:47:28.794Z] Executing 03_tables.sql batch 4.
+[2026-07-24T19:47:28.800Z] Executing 03_tables.sql batch 5.
+[2026-07-24T19:47:28.810Z] Executing 04_constraints.sql batch 1.
+[2026-07-24T19:47:28.814Z] Executing 04_constraints.sql batch 2.
+[2026-07-24T19:47:28.827Z] Executing 04_constraints.sql batch 3.
+[2026-07-24T19:47:28.840Z] Executing 04_constraints.sql batch 4.
+[2026-07-24T19:47:28.852Z] Executing 04_constraints.sql batch 5.
+[2026-07-24T19:47:28.866Z] Executing 04_constraints.sql batch 6.
+[2026-07-24T19:47:28.883Z] Executing 05_relationships.sql batch 1.
+[2026-07-24T19:47:28.892Z] Executing 06_indexes.sql batch 1.
+[2026-07-24T19:47:28.901Z] Executing 07_functions.sql batch 1.
+[2026-07-24T19:47:28.910Z] Executing 08_views.sql batch 1.
+[2026-07-24T19:47:28.918Z] Executing 09_stored_procedures.sql batch 1.
+[2026-07-24T19:47:28.923Z] Executing 09_stored_procedures.sql batch 2.
+[2026-07-24T19:47:28.929Z] Executing 09_stored_procedures.sql batch 3.
+[2026-07-24T19:47:28.935Z] Executing 09_stored_procedures.sql batch 4.
+[2026-07-24T19:47:28.941Z] Executing 09_stored_procedures.sql batch 5.
+[2026-07-24T19:47:28.946Z] Executing 09_stored_procedures.sql batch 6.
+[2026-07-24T19:47:28.951Z] Executing 09_stored_procedures.sql batch 7.
+[2026-07-24T19:47:28.957Z] Executing 09_stored_procedures.sql batch 8.
+[2026-07-24T19:47:28.962Z] Executing 09_stored_procedures.sql batch 9.
+[2026-07-24T19:47:28.966Z] Executing 09_stored_procedures.sql batch 10.
+[2026-07-24T19:47:28.970Z] Executing 09_stored_procedures.sql batch 11.
+[2026-07-24T19:47:28.976Z] Executing 09_stored_procedures.sql batch 12.
+[2026-07-24T19:47:28.981Z] Executing 09_stored_procedures.sql batch 13.
+[2026-07-24T19:47:28.986Z] Executing 09_stored_procedures.sql batch 14.
+[2026-07-24T19:47:28.992Z] Executing 09_stored_procedures.sql batch 15.
+[2026-07-24T19:47:29.000Z] Executing 10_triggers.sql batch 1.
+[2026-07-24T19:47:29.003Z] Executing 10_triggers.sql batch 2.
+[2026-07-24T19:47:29.013Z] Executing 10_triggers.sql batch 3.
+[2026-07-24T19:47:29.018Z] Executing 10_triggers.sql batch 4.
+[2026-07-24T19:47:29.024Z] Executing 10_triggers.sql batch 5.
+[2026-07-24T19:47:29.033Z] Executing seed/001_dbo.ANNOUNCEMENTS.sql batch 1.
+[2026-07-24T19:47:29.037Z] Executing seed/001_dbo.ANNOUNCEMENTS.sql batch 2.
+[2026-07-24T19:47:29.045Z] Executing seed/002_dbo.CUSTOM_FORMS.sql batch 1.
+[2026-07-24T19:47:29.049Z] Executing seed/002_dbo.CUSTOM_FORMS.sql batch 2.
+[2026-07-24T19:47:29.056Z] Executing seed/003_dbo.PAGE_VARIABLES.sql batch 1.
+[2026-07-24T19:47:29.060Z] Executing seed/003_dbo.PAGE_VARIABLES.sql batch 2.
+[2026-07-24T19:47:29.068Z] Executing seed/004_dbo.PORTAL_PAGES.sql batch 1.
+[2026-07-24T19:47:29.072Z] Executing seed/004_dbo.PORTAL_PAGES.sql batch 2.
+[2026-07-24T19:47:29.080Z] Transaction committed. Batches executed: 45.
+[2026-07-24T19:47:29.082Z] SQL connection closed.

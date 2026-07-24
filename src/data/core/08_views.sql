@@ -316,12 +316,9 @@ SELECT
     MAX(CASE WHEN f.FieldName = 'LastName' THEN upp.FieldValue END) AS LastName,
     MAX(CASE WHEN f.FieldName = 'DateOfBirth' THEN upp.FieldValue END) AS DateOfBirth,
     MAX(CASE WHEN f.FieldName = 'PreferredLanguage' THEN upp.FieldValue END) AS PreferredLanguage
-FROM DyFormDForm frm
-JOIN DyFormDFormSection s ON frm.FormID = s.FormID
-JOIN DyFormDFormField f ON s.SectionID = f.SectionID
-JOIN UserProviderProfiles upp ON f.FieldID = upp.FieldID
+FROM UserProviderProfiles upp
+JOIN ProviderProfileFields f ON upp.FieldID = f.FieldID
 JOIN UserProfiles up ON upp.UserID = up.UserID AND upp.ProviderID = up.ProviderID
-WHERE frm.FormName = 'UserProfile'
 GROUP BY up.UserID
 GO
 
@@ -600,7 +597,7 @@ SELECT
     u.UserName,
     p.PortalID,
     p.PortalName
-FROM skylynxnet_coredb.dbo.Users_Portals up
+FROM skylynxnet_coredb.dbo.PortalOwners up
 JOIN skylynxnet_coredb.dbo.AspNetUsers u ON up.UserID = u.Id
 JOIN skylynxnet_coredb.dbo.Portals p ON up.PortalID = p.PortalID;
 GO

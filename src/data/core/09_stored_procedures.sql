@@ -82,14 +82,13 @@ GO
 -- =============================================
 CREATE PROCEDURE CreateAPI_Owner
     @UserID NVARCHAR(128),
-    @ModuleID UNIQUEIDENTIFIER,
     @PortalID UNIQUEIDENTIFIER,
     @OwnerTypeID UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
-    INSERT INTO skylynxnet_coredb.dbo.API_Owners (OwnerUUID, UserID, ModuleID, PortalID, CreatedAt, OwnerTypeID)
-    VALUES (NEWID(), @UserID, @ModuleID, @PortalID, GETDATE(), @OwnerTypeID);
+    INSERT INTO skylynxnet_coredb.dbo.API_Owners (OwnerUUID, UserID, PortalID, CreatedAt, OwnerTypeID)
+    VALUES (NEWID(), @UserID, @PortalID, GETDATE(), @OwnerTypeID);
 END;
 GO
 
@@ -804,7 +803,7 @@ GO
 -- Company: CryoRio
 -- ================================================
 CREATE PROCEDURE CreateModuleSetting
-  @PortalModuleID UNIQUEIDENTIFIER,
+  @PortalPageModuleID UNIQUEIDENTIFIER,
   @SettingKeyID UNIQUEIDENTIFIER,
   @RoleID NVARCHAR(128),
   @Value NVARCHAR(MAX)
@@ -812,8 +811,8 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
-  INSERT INTO ModuleSettings (PortalModuleID, SettingKeyID, RoleID, Value, UpdatedAt)
-  VALUES (@PortalModuleID, @SettingKeyID, @RoleID, @Value, GETDATE());
+  INSERT INTO ModuleSettings (PortalPageModuleID, SettingKeyID, RoleID, Value, UpdatedAt)
+  VALUES (@PortalPageModuleID, @SettingKeyID, @RoleID, @Value, GETDATE());
 END;
 GO
 
@@ -2023,7 +2022,7 @@ GO
 -- Company: CryoRio
 -- ================================================
 CREATE PROCEDURE DeleteModuleSetting
-  @PortalModuleID UNIQUEIDENTIFIER,
+  @PortalPageModuleID UNIQUEIDENTIFIER,
   @SettingKeyID UNIQUEIDENTIFIER,
   @RoleID NVARCHAR(128)
 AS
@@ -2031,7 +2030,7 @@ BEGIN
   SET NOCOUNT ON;
 
   DELETE FROM ModuleSettings
-  WHERE PortalModuleID = @PortalModuleID
+  WHERE PortalPageModuleID = @PortalPageModuleID
     AND SettingKeyID = @SettingKeyID
     AND RoleID = @RoleID;
 END;
@@ -2056,7 +2055,7 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Check if the OwnerType is being used before deleting
-    IF EXISTS (SELECT 1 FROM API_KEYS WHERE OwnerTypeID = @OwnerTypeID)
+    IF EXISTS (SELECT 1 FROM API_Owners WHERE OwnerTypeID = @OwnerTypeID)
     BEGIN
         PRINT '❌ Cannot delete OwnerType: It is currently assigned in API_KEYS';
         RETURN;
@@ -2986,7 +2985,7 @@ CREATE PROCEDURE dbo.GetAllProtosTemplateLink
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT TemplateLinkID, TemplateVersionID, PortalID, ModuleID, IsDefault, OverrideJSON, CreatedAt, UpdatedAt
+    SELECT TemplateLinkID, TemplateVersionID, TargetTypeID, TargetObjectID, ResolverID, IsDefault, OverrideJSON, CreatedAt, UpdatedAt
     FROM skylynxnet_coredb.dbo.ProtosTemplateLink;
 END;
 GO
@@ -3378,10 +3377,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT *
-    FROM dbo.DyFormField
-    WHERE SectionID = @SectionID
-    ORDER BY SortOrder;
+    SELECT f.*
+    FROM dbo.DyFormFieldSectionDefinition fsd
+    JOIN dbo.DyFormField f ON fsd.DyFormFieldID = f.DyFormFieldID
+    WHERE fsd.SectionID = @SectionID
+    ORDER BY fsd.SortOrder;
 END;
 GO
 
@@ -3740,15 +3740,15 @@ GO
 -- Company: CryoRio
 -- ================================================
 CREATE PROCEDURE GetModuleSettingsByModuleAndRole
-  @PortalModuleID UNIQUEIDENTIFIER,
+  @PortalPageModuleID UNIQUEIDENTIFIER,
   @RoleID NVARCHAR(128)
 AS
 BEGIN
   SET NOCOUNT ON;
 
-  SELECT PortalModuleID, SettingKeyID, RoleID, Value, UpdatedAt
+  SELECT PortalPageModuleID, SettingKeyID, RoleID, Value, UpdatedAt
   FROM ModuleSettings
-  WHERE PortalModuleID = @PortalModuleID
+  WHERE PortalPageModuleID = @PortalPageModuleID
     AND RoleID = @RoleID;
 END;
 GO
@@ -4263,7 +4263,7 @@ BEGIN
     SET NOCOUNT ON;
     SELECT up.*, cp.ProviderName, cp.ExternalProfileID
     FROM UserProfiles up
-    LEFT JOIN CustomerProfile_Providers cp ON up.PrimaryProviderID = cp.ProviderID
+    LEFT JOIN CustomerProfile_Providers cp ON up.ProviderID = cp.ProviderID
     WHERE up.UserID = @UserID;
 END;
 
@@ -4725,7 +4725,6 @@ GO
 CREATE PROCEDURE UpdateAPI_Owner
     @OwnerUUID UNIQUEIDENTIFIER,
     @UserID NVARCHAR(128),
-    @ModuleID UNIQUEIDENTIFIER,
     @PortalID UNIQUEIDENTIFIER,
     @OwnerTypeID UNIQUEIDENTIFIER
 AS
@@ -4733,7 +4732,6 @@ BEGIN
     SET NOCOUNT ON;
     UPDATE skylynxnet_coredb.dbo.API_Owners
     SET UserID = @UserID,
-        ModuleID = @ModuleID,
         PortalID = @PortalID,
         OwnerTypeID = @OwnerTypeID
     WHERE OwnerUUID = @OwnerUUID;
@@ -5337,7 +5335,7 @@ GO
 -- Company: CryoRio
 -- ================================================
 CREATE PROCEDURE UpdateModuleSetting
-  @PortalModuleID UNIQUEIDENTIFIER,
+  @PortalPageModuleID UNIQUEIDENTIFIER,
   @SettingKeyID UNIQUEIDENTIFIER,
   @RoleID NVARCHAR(128),
   @NewValue NVARCHAR(MAX)
@@ -5348,7 +5346,7 @@ BEGIN
   UPDATE ModuleSettings
   SET Value = @NewValue,
       UpdatedAt = GETDATE()
-  WHERE PortalModuleID = @PortalModuleID
+  WHERE PortalPageModuleID = @PortalPageModuleID
     AND SettingKeyID = @SettingKeyID
     AND RoleID = @RoleID;
 END;
