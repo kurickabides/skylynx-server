@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Controller: rolesController
+// Description: Handles role lookup, creation, and assignment endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/roles.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

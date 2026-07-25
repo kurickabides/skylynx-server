@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Middleware: roleMiddleware
+// Description: Authorizes authenticated users by role
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/roleMiddleware.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

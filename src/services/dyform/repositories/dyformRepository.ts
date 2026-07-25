@@ -105,3 +105,22 @@ export class DyformRepository {
     };
   }
 }
+
+export const loadUserProfileValues = async (
+  userId: string,
+  portalName: string,
+  portalId: string,
+  providerId?: string
+): Promise<unknown[]> => {
+  const pool = await poolPromise;
+  const request = pool.request();
+  request.input("UserID", sql.UniqueIdentifier, userId);
+  request.input("PortalName", sql.NVarChar, portalName);
+  request.input("PortalID", sql.UniqueIdentifier, portalId);
+  if (providerId) {
+    request.input("ProviderID", sql.UniqueIdentifier, providerId);
+  }
+
+  const result = await request.execute("LoadUserProfileValues");
+  return (result.recordsets ?? []) as unknown[];
+};

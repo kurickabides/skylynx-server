@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Service: roleModel
+// Description: Handles role lookup, creation, and assignment operations
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/roleModel.ts
+// ================================================
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = require("../config/db");
 // ✅ Get all roles using a stored procedure

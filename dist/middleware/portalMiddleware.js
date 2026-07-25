@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Middleware: portalMiddleware
+// Description: Validates portal API key access
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/portalMiddleware.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

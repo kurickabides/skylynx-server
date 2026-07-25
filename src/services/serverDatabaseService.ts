@@ -233,7 +233,7 @@ const skippedLegacyViewNames = [
 ];
 
 function skippedLegacyViewName(batch: string): string | null {
-  const match = batch.match(/\bCREATE\s+VIEW\s+(?:\[dbo\]\.)?\[?([A-Za-z0-9_]+)\]?\s+AS\b/i);
+  const match = batch.match(/\bCREATE\s+VIEW\s+(?:(?:\[?dbo\]?)\.)?\[?([A-Za-z0-9_]+)\]?\s+AS\b/i);
   if (!match) return null;
   return skippedLegacyViewNames.includes(match[1]) ? match[1] : null;
 }
@@ -612,4 +612,13 @@ export default {
   listDatabases,
   createDatabase,
   installDatabase,
+};
+
+export const serverDatabaseTestInternals = {
+  quoteDatabaseName,
+  rewriteSqlForInstall,
+  splitBatches,
+  skippedLegacyViewName,
+  skippedLegacyProcedureName,
+  orderViewBatches,
 };

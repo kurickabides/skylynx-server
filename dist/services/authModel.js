@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Service: authModel
+// Description: Handles password hashing, password comparison, and JWT generation
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/authModel.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

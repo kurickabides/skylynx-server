@@ -34,6 +34,12 @@ export async function getSkylynxPortalTemplateTree(
     throw error;
   }
 }
+
+export async function getProtosTreeViewModelConfig(
+  portalName: string
+): Promise<PortalTemplateTree> {
+  return getSkylynxPortalTemplateTree(portalName);
+}
 // ================================================
 // ✅ Function: getAllProtosTargetTypes
 // Description: Loads all records from ProtosTargetType table

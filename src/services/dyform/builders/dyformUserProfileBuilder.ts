@@ -9,7 +9,11 @@
 
 import { loadUserProfileValues } from "../repositories/dyformRepository";
 import { mapUserProfileResults } from "../../mappers/resultMapper";
-import { DyFormViewModel, ViewModelName } from "../../../entities/dyform/types";
+import {
+  DyFormSection,
+  DyFormViewModel,
+  ViewModelName,
+} from "../../../entities/dyform/types";
 import { userProfileMap } from "../config/userProfileMap";
 
 export async function buildUserProfileViewModel(
@@ -42,6 +46,6 @@ export async function buildUserProfileViewModel(
       version: meta.version,
       resolver: meta.resolver,
     },
-    sections,
+    sections: sections as unknown as DyFormSection[],
   };
 }

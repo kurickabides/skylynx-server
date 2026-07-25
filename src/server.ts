@@ -28,7 +28,7 @@ import { serverHomePage } from "./admin/serverHomePage";
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const port = parseInt(process.env.PORT || "3200", 10);
 
 // Middleware
@@ -94,6 +94,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ✅ Create server for shutdown control
+if (require.main === module) {
 const server = http.createServer(app);
 
 server.listen(port, "0.0.0.0", () => {
@@ -114,3 +115,4 @@ const shutdown = () => {
 
 process.on("SIGINT", shutdown); // e.g. Ctrl+C
 process.on("SIGTERM", shutdown); // e.g. docker stop
+}

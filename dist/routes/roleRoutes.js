@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Route: roleRoutes
+// Description: Role lookup, creation, and assignment endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: routes/roleRoutes.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

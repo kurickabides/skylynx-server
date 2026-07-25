@@ -56,3 +56,5 @@ export class ResultMapper {
     };
   }
 }
+
+export const mapUserProfileResults = ResultMapper.mapUserProfileResults;

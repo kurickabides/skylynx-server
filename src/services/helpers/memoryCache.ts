@@ -8,12 +8,9 @@
 // ================================================
 
 import { getProtosTreeViewModelConfig } from "../protos/repository/protosRepository";
-import {
-  SkylynxPortalCache,
-  SkylynxPortalConfig,
-} from "../../entities/skylynx/types";
+import { PortalTemplateTree } from "../../entities/protos/types";
 
-const cache: SkylynxPortalCache = {};
+const cache: Record<string, PortalTemplateTree> = {};
 
 export class MemoryCache {
   /**
@@ -22,7 +19,7 @@ export class MemoryCache {
    */
   static async getCachedPortalTree(
     formName: string
-  ): Promise<SkylynxPortalConfig> {
+  ): Promise<PortalTemplateTree> {
     if (!cache[formName]) {
       const config = await getProtosTreeViewModelConfig(formName);
       cache[formName] = config;

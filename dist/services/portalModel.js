@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Service: portalModel
+// Description: Handles portal database operations
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: services/portalModel.ts
+// ================================================
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = require("../config/db");
 const createPortal = async (portalName, description, ownerId) => {
@@ -43,6 +51,20 @@ const getPortalById = async (portalId) => {
         throw error;
     }
 };
+const getPortalByApiKeyID = async (apiKeyID) => {
+    try {
+        const pool = await db_1.poolPromise;
+        const result = await pool
+            .request()
+            .input("ApiKeyID", db_1.sql.UniqueIdentifier, apiKeyID)
+            .execute("GetPortalByAPIKey");
+        return result.recordset.length > 0 ? result.recordset[0] : null;
+    }
+    catch (error) {
+        console.error("❌ Error fetching portal:", error);
+        throw error;
+    }
+};
 const updatePortal = async (portalId, portalName, description) => {
     try {
         const pool = await db_1.poolPromise;
@@ -73,11 +95,27 @@ const deletePortal = async (portalId) => {
         throw error;
     }
 };
+const getPortalsByUserID = async (userID) => {
+    try {
+        const pool = await db_1.poolPromise;
+        const result = await pool
+            .request()
+            .input("UserID", db_1.sql.NVarChar(128), userID)
+            .execute("skylynxnet_coredb.dbo.GetPortalsByUserID");
+        return result.recordset;
+    }
+    catch (error) {
+        console.error("❌ Error getting portals by user ID:", error);
+        throw error;
+    }
+};
 // ✅ PortalModel
 const PortalModel = {
     createPortal,
     getAllPortals,
+    getPortalsByUserID,
     getPortalById,
+    getPortalByApiKeyID,
     updatePortal,
     deletePortal,
 };

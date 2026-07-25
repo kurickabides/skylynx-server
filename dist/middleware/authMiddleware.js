@@ -1,12 +1,22 @@
 "use strict";
+// ================================================
+// ✅ Middleware: authMiddleware
+// Description: Validates JWTs and authorizes role-based access
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: middleware/authMiddleware.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const db_1 = require("../config/db");
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
-// 🔐 Token Authentication Middleware
+const userModel_1 = __importDefault(require("../services/userModel"));
+const JWT_SECRET = process.env.JWT_SECRET || "NULL";
+/**
+ * ✅ JWT Authentication Middleware
+ */
 const authenticate = (req, res, next) => {
     const token = req.header("Authorization");
     if (!token) {
@@ -21,7 +31,9 @@ const authenticate = (req, res, next) => {
         res.status(401).json({ error: "Invalid token." });
     }
 };
-// 🔐 Role Authorization Middleware
+/**
+ * ✅ Role Authorization Middleware using GetUserRoles SP
+ */
 const authorize = (requiredRoles) => {
     return async (req, res, next) => {
         try {
@@ -30,15 +42,7 @@ const authorize = (requiredRoles) => {
                     .status(403)
                     .json({ error: "Access denied. No user found in request." });
             }
-            const userId = req.user.id;
-            const pool = await db_1.poolPromise;
-            const result = await pool.request().input("UserId", db_1.sql.NVarChar, userId)
-                .query(`
-          SELECT r.Name FROM AspNetUserRoles ur 
-          JOIN AspNetRoles r ON ur.RoleId = r.Id 
-          WHERE ur.UserId = @UserId
-        `);
-            const userRoles = result.recordset.map((row) => row.Name);
+            const userRoles = await userModel_1.default.getUserRoles(req.user.id);
             const required = Array.isArray(requiredRoles)
                 ? requiredRoles
                 : [requiredRoles];
@@ -56,7 +60,6 @@ const authorize = (requiredRoles) => {
         }
     };
 };
-// ✅ Export as a named module
 const authMiddleware = {
     authenticate,
     authorize,

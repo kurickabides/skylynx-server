@@ -1,4 +1,12 @@
 "use strict";
+// ================================================
+// ✅ Controller: usersController
+// Description: Handles user lookup, creation, role, and profile endpoints
+// Author: NimbusCore.OpenAI
+// Architect: Chad Martin
+// Company: CryoRio
+// Filename: controllers/users.ts
+// ================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -19,6 +27,7 @@ const getAll = async (req, res) => {
 // ✅ Get a specific user by ID
 const getById = async (req, res) => {
     try {
+        console.log("🚀 Hit /users/:id route");
         const user = await getUserById(req.params.id);
         if (!user)
             return res.status(404).json({ error: "User not found" });
@@ -57,11 +66,33 @@ const assignRole = async (req, res) => {
 // ✅ Get roles for a user
 const getRoles = async (req, res) => {
     try {
-        const roles = await getUserRoles(req.params.id);
+        const { id } = req.params;
+        const roles = await getUserRoles(id);
         res.json(roles);
     }
     catch (error) {
         console.error("❌ Failed to get user roles:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+// ✅ Get User Profile
+const getProfile = async (req, res) => {
+    try {
+        console.log("Welcometo the Drug Show");
+        const userId = req.user?.id;
+        const portalName = req.portalName;
+        console.log("🧾 getProfile → userId:", userId);
+        console.log("🧾 getProfile → portalName:", portalName);
+        if (!userId || !portalName) {
+            return res
+                .status(400)
+                .json({ error: "Missing userId or portalName in request." });
+        }
+        const profile = await userModel_1.default.getUserProfile(userId, portalName);
+        res.json({ profile });
+    }
+    catch (error) {
+        console.error("❌ Failed to fetch user profile:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
@@ -72,5 +103,6 @@ const userController = {
     create,
     assignRole,
     getRoles,
+    getProfile,
 };
 exports.default = userController;

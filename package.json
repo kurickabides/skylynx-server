@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc && terser dist/server.js -o dist/server.js -c -m"
+    "build": "tsc && terser dist/server.js -o dist/server.js -c -m",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/integration"
   },
   "dependencies": {
     "authorizenet": "^1.0.10",
@@ -27,10 +30,13 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/mssql": "^9.1.7",
     "@types/node": "^22.15.29",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "^9.0.7",
     "nodemon": "^3.0.1",
+    "supertest": "^7.2.2",
     "terser": "^5.22.0",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.10"
   }
 }
